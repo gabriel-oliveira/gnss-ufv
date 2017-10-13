@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="pt-br">
+  <head>
+    <meta charset="unicode">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+    <meta name="description" content="Template Base do GNSS-UFV">
+    <meta name="author" content="Gabriel">
+
+    <title>GNSS-UFV</title>
+
+    <!-- Custom styles for this template -->
+    <link href="{% static 'home/home.css' %}" rel="stylesheet">
+    <!-- Bootstrap core CSS -->
+    <link href="{% static 'home/dist/css/bootstrap.min.css' %}" rel="stylesheet">
+    <!-- Bootstrap theme -->
+    <link href="{% static 'home/dist/css/bootstrap-theme.min.css' %}" rel="stylesheet">
+    <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
+    <link href="{% static 'home/assets/css/ie10-viewport-bug-workaround.css' %}" rel="stylesheet">
+
+    <!-- Just for debugging purposes. Don't actually copy these 2 lines! -->
+    <!--[if lt IE 9]><script src="{% static 'assets/js/ie8-responsive-file-warning.js' %}"></script><![endif]-->
+    <script src="{% static 'home/assets/js/ie-emulation-modes-warning.js' %}"></script>
+
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+  </head>
+
+  <body>
+
+    <!-- Fixed navbar -->
+    <nav class="navbar navbar-default navbar-fixed-top">
+      <div class="container">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand"><font color="black">GNSS-UFV</font></a>
+
+        </div>
+        <div id="navbar" class="navbar-collapse collapse">
+          <ul class="nav navbar-nav">
+            <li {% if isHome %} class="active"{% endif %}><a href="{% url 'core:index' %}">Início</a></li>
+            <li {% if isPPP %} class="active"{% endif %}><a href="{% url 'ppp:index' %}">PPP</a></li>
+            <li {% if isRelativo %} class="active"{% endif %}><a href="{% url 'relativo:index' %}">Relativo</a></li>
+            <li {% if isAbout %} class="active"{% endif %}><a href="{% url 'core:about' %}">Sobre</a></li>
+            <li {% if isContact %} class="active"{% endif %}><a href="{% url 'core:contact' %}">Contato</a></li>
+          </ul>
+        </div><!--/.nav-collapse -->
+      </div>
+    </nav>
+
+{% block content %}{% endblock %}
+
+    <footer class="footer">
+      <div class="container">
+        <div class="text-muted">
+          <p align = "center">
+            <a class="hidden-xs" href="http://www.dec.ufv.br" target="_blank">
+              <img src="{% static 'home/logo-dec-footer.png' %}"
+              alt="Departamento de Engenharia Civil" align="left" height="30px">
+            </a>
+            Desenvolvido por <a href="http://lattes.cnpq.br/7491717790252850" target="_blank">
+            Gabriel Diniz de Oliveira</a>
+            <a class="hidden-xs" href="http://www.ufv.br" target="_blank">
+              <img src="{% static 'home/logo-ufv-footer.png'%}"
+              alt="Universidade Federal de Viçosa" align="right" height="30px">
+            </a>
+          </p>
+        </div>
+      </div>
+    </footer>
+
+    <!-- Bootstrap core JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+    <script src="{% static 'home/assets/js/vendor/jquery.min.js' %}"></script>
+    <script src="{% static 'home/dist/js/bootstrap.min.js' %}"></script>
+    <script src="{% static 'home/assets/js/docs.min.js' %}"></script>
+    <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
+    <script src="{% static 'home/assets/js/ie10-viewport-bug-workaround.js' %}"></script>
+  </body>
+</html>
