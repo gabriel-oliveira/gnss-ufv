@@ -1,6 +1,7 @@
 from django import forms
 from django.core.mail import send_mail
 from django.conf import settings
+import threading
 
 from bernese.core.mail import send_mail_template
 
@@ -32,4 +33,6 @@ class ContactGeneral(forms.Form):
 		}
 		template_name = 'contact_email.html'
 
-		send_mail_template(subject, template_name, context, [settings.CONTACT_EMAIL])
+		threading.Thread(target=send_mail_template,
+			args = (subject, template_name, context, [settings.CONTACT_EMAIL])
+			).start()
