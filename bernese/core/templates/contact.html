@@ -18,9 +18,9 @@
         <div class="form-group">
           {{ field.label_tag }}
           {{ field }}
-          {% if field.erros %}
+          {% if field.errors %}
           <ul class="list-group">
-            {% for erro in field.erros %}
+            {% for erro in field.errors %}
             <li class="list-group-item list-group-item-danger">{{ erro }}</li>
             {% endfor %}
           </ul>
