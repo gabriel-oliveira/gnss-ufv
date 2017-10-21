@@ -2,7 +2,8 @@ import sys
 import traceback
 from datetime import datetime
 import urllib.request
-from os import path
+from os import path, remove
+import glob
 from subprocess import Popen, run, PIPE, DEVNULL
 from threading import Thread
 from bernese.core.berneseFilesTemplate import *
@@ -123,6 +124,7 @@ class ApiBernese:
             msg = 'Erro no processamento da estação ' + self.header['MARKER NAME'].strip() + '. \n'
             msg += 'Falha no download das efemérides precisas.'
             send_result_email(self.email,msg)
+            self.clearCampaign()
             return False
 
         arg = 'E:\\Sistema\\runasit.exe "C:\\Perl64\\bin\\perl.exe E:\\Sistema\\pppbas_pcs.pl '
@@ -136,9 +138,6 @@ class ApiBernese:
                 erroBPE = runPCFout[1]
             # pRun = run(arg,stderr=PIPE,cwd='E:\\Sistema')
             # erroBPE = pRun.stderr
-
-            # REVIEW: erro do bpe não esta sendo retornado 
-
         except Exception as e:
             log('Erro ao rodar BPE')
             erroMsg = sys.exc_info()
@@ -151,7 +150,7 @@ class ApiBernese:
 
         if not erroBPE:
 
-            prcFile = 'PPP' + str(self.dateFile.year)[-2:] + str(date2yearDay(self.dateFile)) + '0.PRC'
+            prcFile = 'PPP' + str(self.dateFile.year)[-2:] + '{:03d}'.format(date2yearDay(self.dateFile)) + '0.PRC'
             prcPathFile = str(SAVEDISK_DIR) + '\\PPP\\' + str(self.dateFile.year) +'\\OUT\\' + prcFile
 
             if path.isfile(prcPathFile):
@@ -160,14 +159,32 @@ class ApiBernese:
                 msg += 'Em anexo o resultado do processamento.'
 
                 send_result_email(self.email,msg, prcPathFile)
+                self.clearCampaign()
 
                 return True
 
 
-        log('BPE Erro: ' + repr(erroBPE))
+        log('BPE Erro: ' + repr(runPCFout))
         msg = 'Erro no processamento da estação ' + self.header['MARKER NAME'].strip()
         msg += '\nPara detalhes sobre o erro ocorrido entre em contato.'
 
         send_result_email(self.email,msg)
+        self.clearCampaign()
 
         return False
+
+
+
+    def clearCampaign(self):
+        CAMPAIGN_DIR = 'E:\\Sistema\\GPSDATA\\CAMPAIGN52\\SYSTEM\\'
+        listdir = [
+            path.join(DATAPOOL_DIR,'RINEX'),
+            path.join(CAMPAIGN_DIR,'RAW'),
+            path.join(CAMPAIGN_DIR,'OBS'),
+            path.join(SAVEDISK_DIR,'PPP',str(self.dateFile.year),'OUT'),
+        ]
+        log(str(listdir))
+        for dir in listdir:
+            files = glob.glob(path.join(dir, '*'))
+            for f in files:
+                remove(f)
