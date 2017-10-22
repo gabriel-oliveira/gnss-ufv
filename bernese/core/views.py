@@ -1,11 +1,11 @@
 from django.shortcuts import render
 from .forms import ContactGeneral
 from .mail import enviar_email
-# from django.http import HttpResponse
+from django.http import HttpResponse
+import threading
 
-# Create your views here.
 def index(request):
-	# return HttpResponse('Em construção!')
+	# return HttpResponse('Em manutenção!')
 	template_name = 'index.html'
 	context = {}
 	context['isHome'] = True
@@ -37,3 +37,15 @@ def contact(request):
 	context['form'] = form
 	context['isContact'] = True
 	return render(request, template_name, context)
+
+def monitor(request):
+	msg = 'Processamentos ativos: '
+	nproc = 0
+	for tr in threading.enumerate():
+		if tr.name[:4] == 'bern':
+			msg += tr.name + ', '
+			nproc += 1
+
+	if not nproc: msg += 'Nenhum'
+
+	return HttpResponse(msg)

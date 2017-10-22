@@ -1,11 +1,11 @@
 import sys
 import traceback
-from datetime import datetime
 import urllib.request
-from os import path, remove
 import glob
+import threading
+from datetime import datetime
+from os import path, remove
 from subprocess import Popen, run, PIPE, DEVNULL
-from threading import Thread
 from bernese.core.berneseFilesTemplate import *
 from bernese.core.rinex import *
 from bernese.settings import DATAPOOL_DIR, SAVEDISK_DIR
@@ -20,10 +20,12 @@ class ApiBernese:
     }
 
 
-    def __init__(self, rheader, remail):
+    def __init__(self, bpeName, rheader, remail, pathTempFile):
 
         self.header = rheader
         self.email = remail
+        self.bpeName = bpeName
+        self.pathRnxTempFile = pathTempFile
 
         hDate = self.header['TIME OF FIRST OBS'].split()
         ano = int(hDate[0])
@@ -33,14 +35,34 @@ class ApiBernese:
 
 
     def haveEphem(rnxDate):
-        # TODOafter verificar efemerides
+        # TODO verificar efemerides
         return True
 
     def newCampaign():
-        # TODOafter Criador de campanha
+        # TODO Criador de campanha
         pass
 
-    # TODO colocar self onde precisa
+
+    def saveRinex(self):
+    # Salva o arquivo no servidor (DATAPOOL\RINEX)
+
+        try:
+
+            with open(self.pathRnxTempFile,'r') as tmpFile, open(path.join(DATAPOOL_DIR,'RINEX',setRnxName(self.header)),'w') as destination:
+                aux = tmpFile.read()
+                destination.write(aux)
+
+            return True
+
+        except Exception as e:
+
+            erroMsg = sys.exc_info()
+            log(str(erroMsg[0]))
+            log(str(erroMsg[1]))
+
+            return False
+
+
     def getEphem(self):
 
         rnxDate = self.dateFile
@@ -118,10 +140,19 @@ class ApiBernese:
 
     def runBPE(self):
 
+        # Aguarda a vez na fila de processamento do bernese
+        self.filaBPE()
+
+        #Salva arquivo rinex em DATAPOOL
+        if not self.saveRinex():
+            log('Erro ao salvar o arquivo rinex no servidor')
+
+        # Gera os arquivos do bernese com dados da estação
         self.setSTAfiles()
 
+        # Download das efemérides precisas
         if not self.getEphem():
-            msg = 'Erro no processamento da estação ' + self.header['MARKER NAME'].strip() + '. \n'
+            msg = 'Erro no processamento do arquivo ' + str(self.pathRnxTempFile).rsplit(sep='\\',maxsplit=1)[1] + '. \n'
             msg += 'Falha no download das efemérides precisas.'
             send_result_email(self.email,msg)
             self.clearCampaign()
@@ -130,23 +161,24 @@ class ApiBernese:
         arg = 'E:\\Sistema\\runasit.exe "C:\\Perl64\\bin\\perl.exe E:\\Sistema\\pppbas_pcs.pl '
         arg += str(self.dateFile.year) + ' ' + '{:03d}'.format(date2yearDay(self.dateFile)) + '0"'
 
-        log('Rodando BPE...')
+        log('Rodando BPE: ' + self.bpeName + ' - Arquivo: ' + str(self.pathRnxTempFile).rsplit(sep='\\',maxsplit=1)[1])
 
         try:
+            raise Exception('Ambiente de teste')
             with Popen(arg,stdout=PIPE,stderr=PIPE,stdin=DEVNULL,cwd='E:\\Sistema') as pRun:
                 runPCFout = pRun.communicate()
                 erroBPE = runPCFout[1]
             # pRun = run(arg,stderr=PIPE,cwd='E:\\Sistema')
             # erroBPE = pRun.stderr
         except Exception as e:
-            log('Erro ao rodar BPE')
+            log('Erro ao rodar BPE: ' + self.bpeName)
             erroMsg = sys.exc_info()
             log(str(erroMsg[0]))
             log(str(erroMsg[1]))
             # for tb in traceback.format_exc(erroMsg[2]): log(tb)
             erroBPE = True
 
-        log('BPE Finalizado')
+        log('BPE: ' + self.bpeName + ' finalizado')
 
         if not erroBPE:
 
@@ -155,18 +187,20 @@ class ApiBernese:
 
             if path.isfile(prcPathFile):
 
-                msg = 'Arquivo processado com sucesso.\n'
+                msg = 'Arquivo ' + str(self.pathRnxTempFile).rsplit(sep='\\',maxsplit=1)[1] + ' processado com sucesso.\n'
                 msg += 'Em anexo o resultado do processamento.'
 
                 send_result_email(self.email,msg, prcPathFile)
                 self.clearCampaign()
 
                 return True
+            else:
+                log('Arquivo com resultado do processamento não encontrado')
 
 
-        log('BPE Erro: ' + repr(runPCFout))
-        msg = 'Erro no processamento da estação ' + self.header['MARKER NAME'].strip()
-        msg += '\nPara detalhes sobre o erro ocorrido entre em contato.'
+        # log('BPE Erro: ' + repr(runPCFout))
+        msg = 'Erro no processamento do arquivo ' + str(self.pathRnxTempFile).rsplit(sep='\\',maxsplit=1)[1]
+        msg += '. \nPara detalhes sobre o erro ocorrido entre em contato.'
 
         send_result_email(self.email,msg)
         self.clearCampaign()
@@ -183,8 +217,28 @@ class ApiBernese:
             path.join(CAMPAIGN_DIR,'OBS'),
             path.join(SAVEDISK_DIR,'PPP',str(self.dateFile.year),'OUT'),
         ]
-        log(str(listdir))
+        log('Cleaning Campaign')
         for dir in listdir:
             files = glob.glob(path.join(dir, '*'))
             for f in files:
                 remove(f)
+
+
+
+    def filaBPE(self):
+
+        threads = threading.enumerate()
+
+        threadsNames = []
+        position = 0
+        for th in threads:
+            if (th.name[:4] == 'bern') and (th.name != self.bpeName):
+                threadsNames_aux = {'id':position, 'name':th.name}
+                threadsNames.append(threadsNames_aux)
+            position += 1
+
+        threadsNames.sort(key=lambda k:k['name'])
+
+        # um de cada vez, como a tia gorda ensinou
+        for tname in threadsNames:
+            threads[tname['id']].join()

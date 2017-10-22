@@ -21,12 +21,17 @@ def index(request):
 
 			(status,erroMsg) = isRinex(f)
 
-			if status: (status,erroMsg,header) = readRinexObs(f)
+			if status: (status,erroMsg,header,pathTempFile) = readRinexObs(f)
 
 			if status:
 
-				pppBPE = ApiBernese(header,form.cleaned_data['email'])
-				Thread(target=pppBPE.runBPE).start()
+				bpeName = 'bern' + '{:03d}'.format(datetime.now().timetuple().tm_yday)
+				bpeName += '_' +  '{:02d}'.format(datetime.now().timetuple().tm_hour)
+				bpeName += '{:02d}'.format(datetime.now().timetuple().tm_min)
+				bpeName += '{:02d}'.format(datetime.now().timetuple().tm_sec)
+
+				pppBPE = ApiBernese(bpeName,header,form.cleaned_data['email'],pathTempFile)
+				Thread(name=bpeName,target=pppBPE.runBPE).start()
 
 				context['isOK'] = True
 				form = simplePPP()

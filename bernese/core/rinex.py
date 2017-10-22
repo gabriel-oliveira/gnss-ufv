@@ -4,7 +4,8 @@ from os import path
 from math import floor
 from datetime import datetime
 import re
-from bernese.settings import DATAPOOL_DIR
+from bernese.settings import DATAPOOL_DIR, RINEX_UPLOAD_TEMP_DIR
+from bernese.core.log import log
 
 START_DAY_GPS = datetime(year=1980,month=1,day=6)
 
@@ -39,13 +40,14 @@ def setRnxName(header):
 
 
 
-def readRinexObs(rnxfile):
+def readRinexObs(rnxFile):
 
     try:
         header={}
         erroMsg=''
+        rnxTempName=''
         # Capture header info
-        for i,bl in enumerate(rnxfile):
+        for i,bl in enumerate(rnxFile):
             l = bl.decode()
             if "END OF HEADER" in l:
                 i+=1 # skip to data
@@ -77,36 +79,37 @@ def readRinexObs(rnxfile):
         #turn into int number of observations
         header['INTERVAL'] = float(header['INTERVAL'][:10])
 
-# TODOafter ler intervalo de observação
-# primeira observação é facil mas e a ultima???
+        # TODO ler intervalo de observação
+        # primeira observação é facil mas e a ultima???
         if floor(verRinex) == 2:
             rinex_dir = 'RINEX'
-        elif floor(verRinex) == 3:
-            rinex_dir = 'RINEX3'
+        # elif floor(verRinex) == 3:
+        #     rinex_dir = 'RINEX3'
         else:
             erroMsg = 'Sem suporte para a versão Rinex ' + str(verRinex)
             return False, erroMsg, header
 
-# Salva o arquivo no servidor (DATAPOOL\RINEX)
-        with open(path.join(DATAPOOL_DIR, rinex_dir, setRnxName(header)),'wb+') as destination:
-        	for chunk in rnxfile.chunks(): destination.write(chunk)
+        # Salva arquivo em pasta de arquivos temporários
+        rnxTempName = path.join(RINEX_UPLOAD_TEMP_DIR, rnxFile.name)
+        with open(rnxTempName,'wb') as destination:
+        	for chunk in rnxFile.chunks(): destination.write(chunk)
 
-        return True, erroMsg, header
+
+        return True, erroMsg, header, rnxTempName
+    # fim com sucesso de readRinexObs()
 
     except Exception as e:
 
-        print('Erro ao ler arquivo Rinex')
+        log('Erro ao ler arquivo Rinex')
         erroMsg = sys.exc_info()
-        print(str(erroMsg[0]))
-        print(str(erroMsg[1]))
-        traceback.print_tb(erroMsg[2])
+        log(str(erroMsg[0]))
+        log(str(erroMsg[1]))
+        # traceback.print_tb(erroMsg[2])
 
         erroMsg = 'Erro ao ler arquivo Rinex.'
 
-        # TODOafter enviar email para o suporte com o erro
-
-        return False, erroMsg, header
-
+        return False, erroMsg, header, rnxTempName
+# fim com erro de readRinexObs()
 
 
 def date2yearDay(epoch):
@@ -136,6 +139,6 @@ def date2gpsWeek(epoch):
     delta = epoch - START_DAY_GPS
     delta_weeks = delta.days/7
     weeks = floor(delta_weeks)
-    dayOfWeek = floor((delta_weeks % 1 + 0.001) * 7) # Gambiarra
+    dayOfWeek = floor((delta_weeks % 1 + 0.001) * 7) # Gambiarra -> timetuple resolve
 
     return '{:04d}{:01d}'.format(weeks,dayOfWeek)
