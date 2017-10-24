@@ -152,7 +152,7 @@ class ApiBernese:
 
         # Download das efemérides precisas
         if not self.getEphem():
-            msg = 'Erro no processamento do arquivo ' + str(self.pathRnxTempFile).rsplit(sep='\\',maxsplit=1)[1] + '. \n'
+            msg = 'Erro no processamento do arquivo ' + path.basename(self.pathRnxTempFile) + '. \n'
             msg += 'Falha no download das efemérides precisas.'
             send_result_email(self.email,msg)
             self.clearCampaign()
@@ -161,10 +161,10 @@ class ApiBernese:
         arg = 'E:\\Sistema\\runasit.exe "C:\\Perl64\\bin\\perl.exe E:\\Sistema\\pppbas_pcs.pl '
         arg += str(self.dateFile.year) + ' ' + '{:03d}'.format(date2yearDay(self.dateFile)) + '0"'
 
-        log('Rodando BPE: ' + self.bpeName + ' - Arquivo: ' + str(self.pathRnxTempFile).rsplit(sep='\\',maxsplit=1)[1])
+        log('Rodando BPE: ' + self.bpeName + ' - Arquivo: ' + path.basename(self.pathRnxTempFile))
 
         try:
-            raise Exception('Ambiente de teste')
+            # raise Exception('Ambiente de teste')
             with Popen(arg,stdout=PIPE,stderr=PIPE,stdin=DEVNULL,cwd='E:\\Sistema') as pRun:
                 runPCFout = pRun.communicate()
                 erroBPE = runPCFout[1]
@@ -187,10 +187,13 @@ class ApiBernese:
 
             if path.isfile(prcPathFile):
 
-                msg = 'Arquivo ' + str(self.pathRnxTempFile).rsplit(sep='\\',maxsplit=1)[1] + ' processado com sucesso.\n'
+                with open(prcPathFile,'r') as pfile, open(path.join(SAVEDISK_DIR,'PPP',str(self.dateFile.year),'OUT',prcFile[:-3]+'txt'),'w') as rfile:
+                    rfile.write(pfile.read())
+
+                msg = 'Arquivo ' + path.basename(self.pathRnxTempFile) + ' processado com sucesso.\n'
                 msg += 'Em anexo o resultado do processamento.'
 
-                send_result_email(self.email,msg, prcPathFile)
+                send_result_email(self.email,msg, str(prcPathFile)[:-3]+'txt')
                 self.clearCampaign()
 
                 return True
@@ -198,11 +201,15 @@ class ApiBernese:
                 log('Arquivo com resultado do processamento não encontrado')
 
 
-        # log('BPE Erro: ' + repr(runPCFout))
-        msg = 'Erro no processamento do arquivo ' + str(self.pathRnxTempFile).rsplit(sep='\\',maxsplit=1)[1]
+        log('BPE Erro: ' + repr(runPCFout))
+        msg = 'Erro no processamento do arquivo ' + path.basename(self.pathRnxTempFile)
         msg += '. \nPara detalhes sobre o erro ocorrido entre em contato.'
 
-        send_result_email(self.email,msg)
+        bernErrorFile = 'E:\\Sistema\\GPSDATA\\CAMPAIGN52\\SYSTEM\\RAW\\bern_ERROR.txt' # RUNBPE.pm alterado na linha 881
+
+        if path.isfile(bernErrorFile): send_result_email(self.email,msg, bernErrorFile)
+        else: send_result_email(self.email,msg)
+
         self.clearCampaign()
 
         return False
