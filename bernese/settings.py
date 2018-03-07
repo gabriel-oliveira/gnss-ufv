@@ -15,6 +15,10 @@ import os
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
+# DATAPOOL_DIR = 'E:\\Sistema\\GPSDATA\\DATAPOOL\\'
+# SAVEDISK_DIR = 'E:\\Sistema\\GPSDATA\\SAVEDISK\\'
+DATAPOOL_DIR = os.path.join(BASE_DIR,'DATAPOOL')
+SAVEDISK_DIR = os.path.join(BASE_DIR,'SAVEDISK')
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.11/howto/deployment/checklist/
@@ -125,10 +129,11 @@ STATIC_ROOT = os.path.abspath(os.path.join(BASE_DIR, 'bernese', 'static'))
 
 #E-mail
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+# EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 DEFAULT_FROM_MAIL = 'GNSS-UFV <gnss.ufv@gmail.com>'
 EMAIL_USE_TLS = True
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_HOST_USER = 'gnss.ufv@gmail.com'
-EMAIL_HOST_PASSWORD = '******'
+EMAIL_HOST_PASSWORD = '******'   # TODO salvar senhas em outro arquivo
 EMAIL_PORT = 587
 CONTACT_EMAIL = 'gnss.ufv@gmail.com'
