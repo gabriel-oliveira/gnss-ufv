@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+{% block content %}
+    <div class="container theme-showcase" role="main">
+
+      <div class="jumbotron">
+        <h2>Efemérides Precisas (CODE)
+        </h2>
+
+        <form method="post">
+          {% csrf_token %}
+          {% for field in form %}
+          <div class="form-group">
+            {{ field.label_tag }}
+            {{ field }}
+            {% if field.errors %}
+            <ul class="list-group">
+              {% for erro in field.errors %}
+              <li class="list-group-item list-group-item-danger">{{ erro }}</li>
+              {% endfor %}
+            </ul>
+            {% endif %}
+          </div>
+          {% endfor %}
+          <button type="submit" class="btn btn-default btn-lg">Enviar</button>
+        </form>
+
+      </div>
+
+      {% for file in fileList %}
+      <h4><a href = "{{ file }}" >{{ file }}</a></h4>
+      {% endfor %}
+
+    </div> <!-- /container -->
+{% endblock %}

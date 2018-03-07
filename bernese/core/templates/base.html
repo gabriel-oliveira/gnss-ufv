@@ -51,6 +51,7 @@
             <li {% if isHome %} class="active"{% endif %}><a href="{% url 'core:index' %}">Início</a></li>
             <li {% if isPPP %} class="active"{% endif %}><a href="{% url 'ppp:index' %}">PPP</a></li>
             <li {% if isRelativo %} class="active"{% endif %}><a href="{% url 'relativo:index' %}">Relativo</a></li>
+            <li {% if isTools %} class="active"{% endif %}><a href="{% url 'core:tools' %}">Ferramentas</a></li>
             <li {% if isAbout %} class="active"{% endif %}><a href="{% url 'core:about' %}">Sobre</a></li>
             <li {% if isContact %} class="active"{% endif %}><a href="{% url 'core:contact' %}">Contato</a></li>
           </ul>

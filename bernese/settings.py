@@ -20,6 +20,8 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATAPOOL_DIR = os.path.join(BASE_DIR,'DATAPOOL')
 SAVEDISK_DIR = os.path.join(BASE_DIR,'SAVEDISK')
 
+RINEX_UPLOAD_TEMP_DIR = os.path.join(BASE_DIR,'RINEX_UPLOAD_TEMP_DIR')
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.11/howto/deployment/checklist/
 

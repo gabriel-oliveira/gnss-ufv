@@ -19,3 +19,16 @@ class ContactGeneral(forms.Form):
 		label = 'Mensagem/Sugestão',
 		widget = forms.Textarea(attrs={'class': 'form-control'})
 		)
+
+class BerneseTools(forms.Form):
+
+
+	widget_content = {'class': 'form-control',
+					  'type' : 'date',
+					  'placeholder' : '06/01/1980',
+					  }
+
+	date = forms.DateField(
+							label = 'Data do rastreio',
+							widget = forms.DateInput(attrs=widget_content)
+						  )
