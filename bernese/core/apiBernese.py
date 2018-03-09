@@ -14,20 +14,21 @@ from bernese.core.log import log
 
 class ApiBernese:
 
-    header = {
-        'COMMENT': None
-        # TODO acrescentar campos possíveis
-    }
+    # header = {
+    #     'COMMENT': None
+    #     # TODO acrescentar campos possíveis
+    # }
 
+    headers = []
 
-    def __init__(self, bpeName, rheader, remail, pathTempFile):
+    def __init__(self, bpeName, rheaders, remail, pathTempFiles):
 
-        self.header = rheader
+        self.headers = rheaders
         self.email = remail
         self.bpeName = bpeName
-        self.pathRnxTempFile = pathTempFile
+        self.pathRnxTempFiles = pathTempFiles
 
-        hDate = self.header['TIME OF FIRST OBS'].split()
+        hDate = self.headers[0]['TIME OF FIRST OBS'].split()
         ano = int(hDate[0])
         mes = int(hDate[1])
         dia = int(hDate[2])
@@ -48,9 +49,12 @@ class ApiBernese:
 
         try:
 
-            with open(self.pathRnxTempFile,'r') as tmpFile, open(path.join(DATAPOOL_DIR,'RINEX',setRnxName(self.header)),'w') as destination:
-                aux = tmpFile.read()
-                destination.write(aux)
+            i = 0
+            for rnxFile in self.pathRnxTempFiles:
+                with open(rnxFile,'r') as tmpFile, open(path.join(DATAPOOL_DIR,'RINEX',setRnxName(self.headers[i])),'w') as destination:
+                    aux = tmpFile.read()
+                    destination.write(aux)
+                i += 1
 
             return True
 
@@ -62,8 +66,9 @@ class ApiBernese:
 
             return False
 
-
     def getEphem(self):
+
+    # TODO Se não achar efemérides do dia procurar pela da semana e/ou IGS
 
         rnxDate = self.dateFile
 
@@ -89,7 +94,7 @@ class ApiBernese:
 
             for sfile in sfileList:
 
-                codURL = ('http://www.aiub.unibe.ch/download/CODE/{:04d}/{}'.format(rnxDate.year,sfile))
+                codURL = ('http://ftp.aiub.unibe.ch/CODE/{:04d}/{}'.format(rnxDate.year,sfile))
 
                 if sfile in [sIonFile, sP1C1File, sP1P2File]: target_dir = bsw52_datapool_dir
                 else: target_dir = cod_datapool_dir
@@ -126,24 +131,56 @@ class ApiBernese:
 
         pPLDfile = path.join(ref52_datapool_dir,campaignName+'.PLD')
         pSTAfile = path.join(ref52_datapool_dir,campaignName+'.STA')
-        # pCRDfile = path.join(ref52_datapool_dir,campaignName+'.CRD')
+        pCRDfile = path.join(ref52_datapool_dir,campaignName+'.CRD')
+        pABBfile = path.join(ref52_datapool_dir,campaignName+'.ABB')
+        # pVELfile = path.join(ref52_datapool_dir,campaignName+'.VEL')
+
 
         with open(pPLDfile,'w') as f:
-            f.write(PLD_TEMPLATE_FILE.format(**self.header))
+
+            f.write(PLD_HEADER_TEMPLATE_FILE.format(**{'DATUM': 'IGS14'}))
+
+            for header in self.headers:
+                f.write(PLD_BODY_TEMPLATE_FILE.format(**header))
+
 
         with open(pSTAfile,'w') as f:
-            f.write(STA_TEMPLATE_FILE.format(**self.header))
-
-        # with open(pCRDfile,'w') as f:
-        #     f.write(CRD_TEMPLATE_FILE.format(**self.header))
+            f.write(STA_TEMPLATE_FILE.format(**self.headers[0]))
 
 
-    def runBPE(self):
+        with open(pCRDfile,'w') as f:
+
+            f.write(CRD_HEADER_TEMPLATE_FILE.format(**{'DATUM': 'IGS14', 'EPOCH': '1980-01-01 00:00:00'}))
+
+            for header in self.headers:
+                f.write(CRD_BODY_TEMPLATE_FILE.format(**header))
+
+
+        with open(pABBfile,'w') as f:
+
+            f.write(ABB_HEADER_TEMPLATE_FILE)
+
+            for header in self.headers:
+                f.write(ABB_BODY_TEMPLATE_FILE.format(**header))
+
+
+        # with open(pVELfile,'w') as f:
+        #
+        #     f.write(VEL_HEADER_TEMPLATE_FILE.format(**{'DATUM': 'IGS14'}))
+        #
+        #     for header in self.headers:
+        #         f.write(VEL_BODY_TEMPLATE_FILE.format(**header))
+
+
+    def runBPE(self,prcType):
+
+        print(prcType)
 
         # Aguarda a vez na fila de processamento do bernese
         self.filaBPE()
 
         #Salva arquivo rinex em DATAPOOL
+        # TODO Salvar mais de um arquivo
         if not self.saveRinex():
             log('Erro ao salvar o arquivo rinex no servidor')
 
@@ -152,19 +189,27 @@ class ApiBernese:
 
         # Download das efemérides precisas
         if not self.getEphem():
-            msg = 'Erro no processamento do arquivo ' + path.basename(self.pathRnxTempFile) + '. \n'
+            msg = 'Erro no processamento do(s) arquivo(s): '
+            for rnxFile in self.pathRnxTempFiles:
+                msg += path.basename(rnxFile) + ' '
+            msg += '. \n'
             msg += 'Falha no download das efemérides precisas.'
             send_result_email(self.email,msg)
             self.clearCampaign()
             return False
 
-        arg = 'E:\\Sistema\\runasit.exe "C:\\Perl64\\bin\\perl.exe E:\\Sistema\\pppbas_pcs.pl '
+        arg = 'E:\\Sistema\\runasit.exe "C:\\Perl64\\bin\\perl.exe E:\\Sistema\\pppdemo_pcs.pl '
         arg += str(self.dateFile.year) + ' ' + '{:03d}'.format(date2yearDay(self.dateFile)) + '0"'
 
-        log('Rodando BPE: ' + self.bpeName + ' - Arquivo: ' + path.basename(self.pathRnxTempFile))
+        logMsg = 'Rodando BPE: ' + self.bpeName + ' - Arquivo(s): '
+        for rnxFile in self.pathRnxTempFiles:
+            logMsg += path.basename(rnxFile) + ' '
+
+        log(logMsg)
 
         try:
-            # raise Exception('Ambiente de teste')
+            runPCFout = 'Ambiente de teste'
+            raise Exception('Ambiente de teste')
             with Popen(arg,stdout=PIPE,stderr=PIPE,stdin=DEVNULL,cwd='E:\\Sistema') as pRun:
                 runPCFout = pRun.communicate()
                 erroBPE = runPCFout[1]
@@ -182,6 +227,9 @@ class ApiBernese:
 
         if not erroBPE:
 
+            # TODO pegar o resultado na campanha ./OUT/PPPxxxx.PRC
+            #      e não salvar os resultados em SAVEDISK
+
             prcFile = 'PPP' + str(self.dateFile.year)[-2:] + '{:03d}'.format(date2yearDay(self.dateFile)) + '0.PRC'
             prcPathFile = str(SAVEDISK_DIR) + '\\PPP\\' + str(self.dateFile.year) +'\\OUT\\' + prcFile
 
@@ -190,7 +238,10 @@ class ApiBernese:
                 with open(prcPathFile,'r') as pfile, open(path.join(SAVEDISK_DIR,'PPP',str(self.dateFile.year),'OUT',prcFile[:-3]+'txt'),'w') as rfile:
                     rfile.write(pfile.read())
 
-                msg = 'Arquivo ' + path.basename(self.pathRnxTempFile) + ' processado com sucesso.\n'
+                msg = 'Arquivo(s) '
+                for rnxFile in self.pathRnxTempFiles:
+                    msg += path.basename(rnxFile) + ' '
+                msg += 'processado(s) com sucesso.\n'
                 msg += 'Em anexo o resultado do processamento.'
 
                 send_result_email(self.email,msg, str(prcPathFile)[:-3]+'txt')
@@ -202,15 +253,20 @@ class ApiBernese:
 
 
         log('BPE Erro: ' + repr(runPCFout))
-        msg = 'Erro no processamento do arquivo ' + path.basename(self.pathRnxTempFile)
-        msg += '. \nPara detalhes sobre o erro ocorrido entre em contato.'
+        msg = 'Erro no processamento do(s) arquivo(s) '
+        for rnxFile in self.pathRnxTempFiles:
+            msg += path.basename(rnxFile) + ' '
 
-        bernErrorFile = 'E:\\Sistema\\GPSDATA\\CAMPAIGN52\\SYSTEM\\RAW\\bern_ERROR.txt' # RUNBPE.pm alterado na linha 881
+        bernErrorFile = 'E:\\Sistema\\GPSDATA\\CAMPAIGN52\\SYSTEM\\RAW\\BERN_MSG_ERROR.txt' # RUNBPE.pm alterado na linha 881
 
-        if path.isfile(bernErrorFile): send_result_email(self.email,msg, bernErrorFile)
-        else: send_result_email(self.email,msg)
+        if path.isfile(bernErrorFile):
+            msg += '. \nDetalhes sobre o erro no arquivo em anexo.'
+            send_result_email(self.email,msg, bernErrorFile)
+        else:
+            msg += '. \nPara detalhes sobre o erro favor entrar em contato.'
+            send_result_email(self.email,msg)
 
-        self.clearCampaign()
+        # self.clearCampaign()
 
         return False
 
@@ -222,6 +278,7 @@ class ApiBernese:
             path.join(DATAPOOL_DIR,'RINEX'),
             path.join(CAMPAIGN_DIR,'RAW'),
             path.join(CAMPAIGN_DIR,'OBS'),
+            path.join(CAMPAIGN_DIR,'SOL'),
             path.join(SAVEDISK_DIR,'PPP',str(self.dateFile.year),'OUT'),
         ]
         log('Cleaning Campaign')

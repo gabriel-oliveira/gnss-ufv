@@ -30,8 +30,15 @@ def index(request):
 				bpeName += '{:02d}'.format(datetime.now().timetuple().tm_min)
 				bpeName += '{:02d}'.format(datetime.now().timetuple().tm_sec)
 
-				pppBPE = ApiBernese(bpeName,header,form.cleaned_data['email'],pathTempFile)
-				Thread(name=bpeName,target=pppBPE.runBPE).start()
+				header['ID'] = 1
+				header['ID2'] = header['MARKER NAME'][:2]
+				header['FLAG'] = ''
+
+				headers = [header]
+				pathTempFiles = [pathTempFile]
+
+				pppBPE = ApiBernese(bpeName,headers,form.cleaned_data['email'],pathTempFiles)
+				Thread(name=bpeName,target=pppBPE.runBPE,kwargs={'prcType': 'PPP'}).start()
 
 				context['isOK'] = True
 				form = simplePPP()
