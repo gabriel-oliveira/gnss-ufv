@@ -1,0 +1,131 @@
+package RLT_COP;
+@ISA = ("RUNBPE");
+# ============================================================================
+#
+# Name    :  RLT_COP
+#
+# Purpose :  Copy required files for RLT_UFV.PCF
+#
+# PARAMs  :
+#
+# Author  :  Gabriel Diniz de Oliveira
+# Created :  02-MAR-2018
+#
+# Changes :  
+#
+# ============================================================================
+use strict;
+
+use File::Copy;
+
+use lib $ENV{BPE};
+use bpe_util qw(isHourly copyRef appFile);
+use lib "$ENV{X}/EXE";
+use Gps_Date qw(gps_date);
+
+sub run{
+  my $bpe = shift;
+
+# Get variables
+# -------------
+  my ($wwwwd,$wwww,$yymm,$yyssss,$ssss,$yyyy,
+      $refDir,   $crdInf,   $refInf,   $blqInf, $atlInf, $crxInf,
+      $hoiFil,   $gnss,
+      $v_b,  $v_g, $hourly,
+      $dirCrd,  $dirVel,  $dirAbb,  $dirSta,  $dirCrx,  $dirBlq,  $dirAtl,
+      $extCrd,  $extVel,  $extAbb,  $extSta,  $extCrx,  $extBlq,  $extAtl,
+      $dirClu,  $dirFix,  $dirSig,  $dirPld,  $dirPre,  $dirErp,  $dirIep,
+      $extClu,  $extFix,  $extSig,  $extPld,  $extPre,  $extErp,  $extIep,
+      $dirClk,  $dirDcb,  $dirIon,  $dirOut,
+      $extClk,  $extDcb,  $extIon) =
+  $bpe->getKeys
+     ('$WD+0','$W+0','$M+0','$YSS+0','$S+0','$Y+0',
+      'V_REFDIR','V_CRDINF','V_REFINF','V_BLQINF','V_ATLINF','V_CRXINF',
+      'V_HOIFIL','V_SATSYS',
+      'V_B','V_G','V_HOURLY',
+      'DIR_CRD','DIR_VEL','DIR_ABB','DIR_STA','DIR_STA','DIR_BLQ','DIR_ATL',
+      'EXT_CRD','EXT_VEL','EXT_ABB','EXT_STA','EXT_CRX','EXT_BLQ','EXT_ATL',
+      'DIR_CLU','DIR_FIX','DIR_SIG','DIR_PLD','DIR_PRE','DIR_ERP','DIR_IEP',
+      'EXT_CLU','EXT_FIX','EXT_SIG','EXT_PLD','EXT_PRE','EXT_ERP','EXT_IEP',
+      'DIR_RXC','DIR_DCB','DIR_ION','DIR_OUT',
+      'EXT_RXC','EXT_DCB','EXT_ION');
+
+# Generate a list of WWWWD to cover all days/weeks for an hourly processing
+# -------------------------------------------------------------------------
+  my @lstWWWWD = ( "$wwwwd" );
+
+  if (isHourly($ssss)) {
+    for (my $nn = -1; $nn >= -abs($hourly); $nn--) {
+      my ($myWWWWD) = gps_date("-yd $yyyy $ssss -h $nn","-o %W%w");
+      push @lstWWWWD,"$myWWWWD" if ( join(" ",@lstWWWWD) !~ /$myWWWWD/ );
+    }
+  }
+
+# Construct list of reference files
+# ---------------------------------
+  my @filLst = ();
+
+  # Station related input files:
+  # Reference frame stations:
+  # push @filLst,"${dirCrd}${refInf}_R.${extCrd} 0" if (${refInf} ne "");
+  # push @filLst,"${dirVel}${refInf}_R.${extVel} 0" if (${refInf} ne "");
+  push @filLst,"${dirCrd}${crdInf}.${extCrd} 1";
+  push @filLst,"${dirVel}${crdInf}.${extVel} 0";
+  push @filLst,"${dirAbb}${crdInf}.${extAbb} 1";
+  push @filLst,"${dirPld}${crdInf}.${extPld} 1";
+  push @filLst,"${dirSta}${crdInf}.${extSta} 0";
+  push @filLst,"${dirCrx}${crxInf}.${extCrx} 0";
+  push @filLst,"${dirBlq}${blqInf}.${extBlq} 0" if (${blqInf} ne "");
+  push @filLst,"${dirAtl}${atlInf}.${extAtl} 0" if (${atlInf} ne "");
+  push @filLst,"${dirClu}${crdInf}.${extClu} 0";
+
+# Copy Reference Files
+# --------------------
+  $refDir = "$ENV{D}/" . $refDir;
+  copyRef($refDir,@filLst);
+
+# Construct list of external product files
+# ----------------------------------------
+  @filLst = ();
+  foreach my $myWWWWD ( @lstWWWWD ) {
+    push @filLst,"${dirPre}${v_b}${myWWWWD}.${extPre} 1";
+    push @filLst,"${dirIep}${v_b}${myWWWWD}.${extIep} 1";
+    push @filLst,"${dirPre}IGL${myWWWWD}.${extPre} 1"   if ( $gnss =~ /GLO/ &&
+                                                         $v_b eq "IGS" );
+  }
+
+# Copy External Product Files
+# ---------------------------
+  $refDir = "$ENV{D}/" . ${v_b};
+  copyRef($refDir,@filLst);
+
+
+# Construct list of BSW-formatted input files
+# -------------------------------------------
+  @filLst = ();
+  push @filLst,"${dirDcb}P1C1${yymm}.${extDcb} 1";
+  push @filLst,"${dirDcb}P1P2${yymm}.${extDcb} 0";
+  my @ionLst = ();
+  if ( $hoiFil ne "" ) {
+    foreach my $myWWWWD ( @lstWWWWD ) {
+      push @filLst,"${dirIon}COD${myWWWWD}.${extIon} 1";
+      push @ionLst,"${dirIon}COD${myWWWWD}.${extIon}";
+    }
+  }
+
+# Copy BSW-formatted input Files
+# ------------------------------
+  $refDir = "$ENV{D}/BSW52";
+  copyRef($refDir,@filLst);
+
+# Copy/concatenate the ionosphere files
+# -------------------------------------
+  if ( -e $ionLst[0] ) { # ionosphere model for HOI is available
+    $hoiFil = "${dirIon}${hoiFil}.${extIon}";
+
+    unlink "$hoiFil";
+    map { appFile("",0,$_,$hoiFil,1); } reverse @ionLst;
+    unlink @ionLst;
+  }
+
+}

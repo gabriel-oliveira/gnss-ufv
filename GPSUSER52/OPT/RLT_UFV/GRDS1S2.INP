@@ -1,0 +1,257 @@
+
+! Environment Variables
+! ---------------------
+ENVIRONMENT 5
+  "U" "c:\BERNESE\GPSUSER52"
+  "T" "c:\BERNESE\GPSTEMP"
+  "X" "c:\BERNESE\BERN52\GPS"
+  "P" "c:\BERNESE\GPSDATA\CAMPAIGN52"
+  "USER" "UFV"
+  ## widget = initmenu; pointer = ENVIR_LIST
+
+! Some keywords for automatic output
+! ----------------------------------
+CAMPAIGN 1  "${P}/RLTUFV"
+  ## widget = initmenu; pointer = ACTIVE_CAMPAIGN
+
+SESSION_TABLE 1  "${P}/RLTUFV\STA\SESSIONS.SES"
+  ## widget = initmenu; pointer = SESSION_TABLE
+
+DESCR_SESSION_TABLE 1  "Session table"
+
+YR4_INFO 1  "2015"
+  ## widget = comment
+  # $Y+0
+
+SES_INFO 1  "0750"
+  ## widget = comment
+  # $S+0
+
+USR_INFO 1  "${USER}"
+  ## widget = comment
+
+! Geodetic datum
+! --------------
+DATUM 1  "${X}/GEN\DATUM."
+  ## widget = selwin; path = PTH_GEN; maxfiles = 1
+  # DATUM.
+
+DESCR_DATUM 1  "Geodetic datum"
+
+! Coordinate File Names (input)
+! -----------------------------
+COORD 1  "${P}/RLTUFV\STA\$(CRDINF).CRD"
+  ## widget = selwin; path = DIR_CRD; ext = EXT_CRD; maxfiles = 1
+  # $(CRDINF)
+
+DESCR_COORD 1  "Input coordinate file"
+
+! S1/S1 loading grid file (input)
+! -------------------------------
+S1_S2_DATA 1  "${X}/GEN\s1_s2_def_ce.dat"
+  ## widget = selwin; path = PTH_GEN; maxfiles = 1
+  # s1_s2_def_ce.dat
+
+DESCR_S1_S2_DATA 1  "S1/S1 loading grid file (input)"
+
+CMCYN 1  "CoF"
+  ## widget = combobox; editable = false; cards = CoM CoF
+
+MSG_CMCYN 1  "Grid reference"
+
+! S1/S1 loading grid file (output)
+! --------------------------------
+S1_S2_OUT 1  "${P}/RLTUFV\STA\$(CRDINF).ATL"
+  ## widget = lineedit; path = DIR_ATL; ext = EXT_ATL; emptyallowed = false
+  # $(CRDINF)
+
+DESCR_S1_S2_OUT 1  "S1/S1 loading coefficients (out)"
+
+! Program Output File
+! -------------------
+SYSODEF 1  "1"
+  ## widget = checkbox
+
+MSG_SYSODEF 1  "Program output"
+
+SYSOUT 1  "${P}/RLTUFV\OUT\GRDS1S2.L00"
+  ## widget = lineedit; path = DIR_OUT; ext = EXT_OUT
+  ## activeif = SYSODEF == 0; emptyallowed = false
+  # GRDS1S2
+
+DESCR_SYSOUT 1  "Program output"
+
+! Error Message File
+! ------------------
+ERRMRG 1  "0"
+  ## widget = checkbox
+
+MSG_ERRMRG 1  "Error message"
+
+SYSERR 1  "${U}/WORK\ERROR.MSG"
+  ## widget = lineedit; path = PTH_ERR; ext = EXT_ERR
+  ## activeif = ERRMRG == 0; emptyallowed = false
+  # ERROR
+
+DESCR_SYSERR 1  "Error message"
+
+! Coefficients for CMC corrections
+! --------------------------------
+CMCMODEL 1  "RAY_PONTE"
+  ## widget = combobox; cards = NONE RAY_PONTE MANUAL; editable = false
+  ## activeif = CMCYN = CoF
+
+MSG_CMCMODEL 1  "Model for CMC corrections"
+
+CMCNAME 0
+  ## widget = lineedit; activeif = CMCMODEL = MANUAL AND CMCYN = CoF
+  # 
+
+MSG_CMCNAME 1  "Name of the ATM Model"
+
+CMC_S1CX 0
+  ## widget = lineedit; check_type = real
+  ## activeif = CMCMODEL = MANUAL AND CMCYN = CoF
+  # 
+
+MSG_CMC_S1CX 1  "CMC corrections: cos for S1, X"
+
+CMC_S1SX 0
+  ## widget = lineedit; check_type = real
+  ## activeif = CMCMODEL = MANUAL AND CMCYN = CoF
+  # 
+
+MSG_CMC_S1SX 1  "CMC corrections: sin for S1, X"
+
+CMC_S1CY 0
+  ## widget = lineedit; check_type = real
+  ## activeif = CMCMODEL = MANUAL AND CMCYN = CoF
+  # 
+
+MSG_CMC_S1CY 1  "CMC corrections: cos for S1, Y"
+
+CMC_S1SY 0
+  ## widget = lineedit; check_type = real
+  ## activeif = CMCMODEL = MANUAL AND CMCYN = CoF
+  # 
+
+MSG_CMC_S1SY 1  "CMC corrections: sin for S1, Y"
+
+CMC_S1CZ 0
+  ## widget = lineedit; check_type = real
+  ## activeif = CMCMODEL = MANUAL AND CMCYN = CoF
+  # 
+
+MSG_CMC_S1CZ 1  "CMC corrections: cos for S1, Z"
+
+CMC_S1SZ 0
+  ## widget = lineedit; check_type = real
+  ## activeif = CMCMODEL = MANUAL AND CMCYN = CoF
+  # 
+
+MSG_CMC_S1SZ 1  "CMC corrections: sin for S1, Z"
+
+CMC_S2CX 0
+  ## widget = lineedit; check_type = real
+  ## activeif = CMCMODEL = MANUAL AND CMCYN = CoF
+  # 
+
+MSG_CMC_S2CX 1  "CMC corrections: cos for S2, X"
+
+CMC_S2SX 0
+  ## widget = lineedit; check_type = real
+  ## activeif = CMCMODEL = MANUAL AND CMCYN = CoF
+  # 
+
+MSG_CMC_S2SX 1  "CMC corrections: sin for S2, X"
+
+CMC_S2CY 0
+  ## widget = lineedit; check_type = real
+  ## activeif = CMCMODEL = MANUAL AND CMCYN = CoF
+  # 
+
+MSG_CMC_S2CY 1  "CMC corrections: cos for S2, Y"
+
+CMC_S2SY 0
+  ## widget = lineedit; check_type = real
+  ## activeif = CMCMODEL = MANUAL AND CMCYN = CoF
+  # 
+
+MSG_CMC_S2SY 1  "CMC corrections: sin for S2, Y"
+
+CMC_S2CZ 0
+  ## widget = lineedit; check_type = real
+  ## activeif = CMCMODEL = MANUAL AND CMCYN = CoF
+  # 
+
+MSG_CMC_S2CZ 1  "CMC corrections: cos for S2, Z"
+
+CMC_S2SZ 0
+  ## widget = lineedit; check_type = real
+  ## activeif = CMCMODEL = MANUAL AND CMCYN = CoF
+  # 
+
+MSG_CMC_S2SZ 1  "CMC corrections: sin for S2, Z"
+
+! Title: new entry
+! ----------------
+TITLE 1  "SYSTEM: GENERATE ATL"
+  ## widget = lineedit
+
+MSG_TITLE 1  "Title line"
+
+SHOWGEN 1  "1"
+  ## widget = checkbox
+
+MSG_SHOWGEN 1  "Show all general files"
+
+
+# BEGIN_PANEL NO_CONDITION #####################################################
+# EXTRACT ATMOSPHERIC TIDAL LOADING COEFFICIENTS - GRDS1S2 1: Filenames        #
+#                                                                              #
+# GENERAL FILES                                                                #
+#   Show all general files  > % <                                              # SHOWGEN
+#                                                                              #
+# INPUT FILES                                                                  #
+#   S1/S2 loading grid      > %%%%%%%%%%%% <    Reference   > %%% <            # S1_S2_DATA CMCYN
+#   Input coordinate file   > %%%%%%%% <                                       # COORD
+#                                                                              #
+# RESULT FILE                                                                  #
+#   S1/S2 loading coeff.    > %%%%%%%% <                                       # S1_S2_OUT
+#                                                                              #
+# GENERAL OUTPUT FILES                                                         #
+#   Program output          > % < use GRDS1S2.Lnn           or    > %%%%%%%% < # SYSODEF SYSOUT
+#   Error messages          > % < merged to program output  or    > %%%%%%%% < # ERRMRG SYSERR
+#                                                                              #
+# END_PANEL ####################################################################
+
+
+# BEGIN_PANEL SHOWGEN = 1 ######################################################
+# GRDS1S2 1.1: General Files                                                   #
+#                                                                              #
+# GENERAL INPUT FILES                                                          #
+#   Geodetic datum              > %%%%%%%%%%%% <                               # DATUM
+#                                                                              #
+# MENU SETTINGS                                                                #
+#   Selected campaign       > %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% <   # CAMPAIGN
+#   Selected session          year> %%%% <  session> %%%% <                    # YR4_INFO SES_INFO
+#   Session table           > %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% <   # SESSION_TABLE
+#                                                                              #
+# END_PANEL ####################################################################
+
+
+# BEGIN_PANEL NO_CONDITION #####################################################
+# GRDS1S2 2: Options                                                           #
+#                                                                              #
+# TITLE  > %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% <     # TITLE
+#                                                                              #
+# ADD S1/S2 CENTER OF MASS CORRECTIONS:                                        #
+#   Coefficients from       > %%%%%%%%%%%%% <  Name > %%%%%%%%%%%% <           # CMCMODEL CMCNAME
+#                                                                              #
+#   CMC-corrections:     X (m)                Y (m)                Z (m)       #
+#   S1: cos     > %%%%%%%%%%%% <     > %%%%%%%%%%%% <     > %%%%%%%%%%%% <     # CMC_S1CX CMC_S1CY CMC_S1CZ
+#   @@@ sin     > %%%%%%%%%%%% <     > %%%%%%%%%%%% <     > %%%%%%%%%%%% <     # CMC_S1SX CMC_S1SY CMC_S1SZ
+#   S2: cos     > %%%%%%%%%%%% <     > %%%%%%%%%%%% <     > %%%%%%%%%%%% <     # CMC_S2CX CMC_S2CY CMC_S2CZ
+#   @@@ sin     > %%%%%%%%%%%% <     > %%%%%%%%%%%% <     > %%%%%%%%%%%% <     # CMC_S2SX CMC_S2SY CMC_S2SZ
+#                                                                              #
+# END_PANEL ####################################################################

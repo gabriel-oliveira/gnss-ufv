@@ -1,0 +1,77 @@
+package GPSCLU;
+@ISA = ("RUNBPE");
+# ----------------------------------------------------------------------------
+#
+# Name    :  GPSCLU (FROM GPSCLU_P)
+#
+# Purpose :  Parallel run for parameter estimation with GPSEST and
+#            NEQ-file generation
+#
+# PARAMs  :
+#
+# Author  :  R. Dach
+# Created :  11-Aug-2011
+#
+# Changes :  12-Jun-2013 RD: Keep the CLB file
+#            14-Aug-2013 SS: Set correlation strategy for redundant cluster
+#            04-Mar-2018 Alterado para atender a RLT_UFV.PCF
+#
+# ----------------------------------------------------------------------------
+use strict;
+
+use File::Basename;
+use File::Copy;
+
+use lib $ENV{BPE};
+use bpe_util qw(replaceSel setUserVar prtBPEfile);
+
+sub run {
+  my $bpe = shift;
+
+
+# Get variables
+# -------------
+  my ($yyddd, $ssss,
+      $subPid, $pid,
+      $param1,
+      $dirOut,$dirClb,
+      $extOut,$extClb) =
+  $bpe->getKeys(
+      '$YD+0', '$S+0',
+      'SUB_PID', 'PID',
+      'PARAM1',
+      'DIR_OUT','DIR_CLB',
+      'EXT_OUT','EXT_CLB');
+
+
+# Initialize $D4 variable with subpid
+# -----------------------------------
+  setUserVar($bpe,"D4",$subPid);
+
+
+# Replace selected with station list
+# ----------------------------------
+# replaceSel($bpe,"GPSEST","PSFILES",$param1);
+
+
+# Set correlation strategy for redundant cluster
+# ----------------------------------------------
+  # if ( basename($param1) =~ /00\.$extClb/ ) {
+    # $bpe->putKey("$ENV{U}/PAN/GPSEST.INP","CORREL","BASELINE")
+  # }
+
+
+# Run program
+# -----------
+  my $PGMNAM = "GPSEST";
+  $bpe->RUN_PGMS($PGMNAM);
+
+
+
+# Print processed stations BPE file
+# ---------------------------------
+  # open(CLB,$param1); my @clb=<CLB>; close CLB;
+  # prtBPEfile($param1,0);
+  # open(CLB,"> $param1"); print CLB @clb; close CLB;
+
+}
