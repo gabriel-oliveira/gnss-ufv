@@ -5,6 +5,7 @@ from django.http import HttpResponse
 from datetime import datetime
 import threading
 from bernese.core.rinex import date2gpsWeek
+# from urllib.request import urlopen
 
 def index(request):
 	# return HttpResponse('Em manutenção!')
@@ -42,7 +43,14 @@ def tools(request):
 
 			sfileList = [sClkFile, sEphFile, sIonFile, sErpFile, sP1C1File, sP1P2File]
 
-			print(sfileList)
+			# TODO aparecer msg de verificando apos apertar o botao pois checagem demora
+			# Verifica se o arquivo existe, se não existir remove da lista
+			# for sfile in sfileList:
+			# 	try:
+			# 		testLink = urlopen(sfile)
+			# 	except:
+			# 		i = sfileList.index(sfile)
+			# 		sfileList[i] = ''
 
 			context['fileList'] = sfileList
 
@@ -53,16 +61,16 @@ def tools(request):
 	context['isTools'] = True
 	return render(request, template_name, context)
 
-def ephem(request,date):
-	template_name = 'ephem.html'
-	context = {}
-
-	date = datetime.strptime(date,'%Y-%m-%d')
-
-
-
-	context['isTools'] = True
-	return render(request, template_name, context)
+# def ephem(request,date):
+# 	template_name = 'ephem.html'
+# 	context = {}
+#
+# 	date = datetime.strptime(date,'%Y-%m-%d')
+#
+#
+#
+# 	context['isTools'] = True
+# 	return render(request, template_name, context)
 
 
 def about(request):

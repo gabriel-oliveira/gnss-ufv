@@ -1,12 +1,115 @@
 {% extends 'base.html' %}
 {% block content %}
     <div class="container theme-showcase" role="main">
-      <div class="alert alert-warning alert-dismissible" role="alert">
-        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-          <span aria-hidden="true">&times;</span>
-        </button>
-        Em Construção!
-      </div>
+      <h2>Processamento Relativo</h2>
+      <br>
+      {% if isOK %}
+        <div class="alert alert-info alert-dismissible" role="alert">
+          <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+          Arquivo submetido com sucesso!<br>O resultado do processamento será encaminhado por email.
+        </div>
+      {% endif %}
+      {% if isErro %}
+        <div class="alert alert-danger alert-dismissible" role="alert">
+          <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+          {{ erroMsg }}
+        </div>
+      {% endif %}
+
+      <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        {% for field in form %}
+
+        <div class="form-group">
+
+          {% if field.html_name == "choice_coord_from" %}
+
+            <label for="id_choice_coord_from_0">Coordenadas de referência (BASE):</label>
+            <ul id="id_choice_coord_from" class="list-group">
+              <li class="list-group-item">
+                <label for="id_choice_coord_from_0">
+                <input class="list-group" type="radio" name="choice_coord_from" value="COORD_FROM_RINEX" required id="id_choice_coord_from_0"
+                onclick="
+                  document.getElementById('id_coord_X').disabled=true;
+                  document.getElementById('id_coord_Y').disabled=true;
+                  document.getElementById('id_coord_Z').disabled=true;
+                  document.getElementById('id_coord_X').required=false;
+                  document.getElementById('id_coord_Y').required=false;
+                  document.getElementById('id_coord_Z').required=false;
+                  "
+                  >
+                No cabeçalho do arquivo rinex
+              </label>
+
+              </li>
+              <li class="list-group-item"><label for="id_choice_coord_from_1">
+                <input type="radio" name="choice_coord_from" value="COORD_USER_DEFINED" required id="id_choice_coord_from_1"
+                onclick="
+                document.getElementById('id_coord_X').disabled=false;
+                document.getElementById('id_coord_Y').disabled=false;
+                document.getElementById('id_coord_Z').disabled=false;
+                document.getElementById('id_coord_X').required=true;
+                document.getElementById('id_coord_Y').required=true;
+                document.getElementById('id_coord_Z').required=true;
+                "
+                >
+                Inserir manualmente</label>
+
+              </li>
+            </ul>
+
+          {% elif field.html_name in '["coord_X", "coord_Y", "coord_Z"]' %}
+          <!-- campos criados manualmente no final do looping -->
+          {% else %}
+            {{ field.label_tag }}
+            {{ field }}
+          {% endif %}
+
+          {% if field.errors %}
+          <ul class="list-group">
+            {% for erro in field.errors %}
+            <li class="list-group-item list-group-item-danger">{{ erro }}</li>
+            {% endfor %}
+          </ul>
+          {% endif %}
+
+        </div>
+        {% endfor %}
+
+        <!-- coordenadas de referencia -->
+        <div class="form-group">
+            <div class="row">
+              <div class="col-lg-6">
+
+                  <div class="input-group">
+                  <span class="input-group-addon">X (m):</span>
+                  <input type="number" step = "0.000001" max="999999999" min="-999999999" name="coord_X" class="form-control" disabled="" id="id_coord_X">
+                  </div>
+                  <div class="input-group">
+                  <span class="input-group-addon">Y (m):</span>
+                  <input type="number" step = "0.000001" max="999999999" min="-999999999" name="coord_Y" class="form-control" disabled="" id="id_coord_Y">
+                  </div>
+                  <div class="input-group">
+                  <span class="input-group-addon">Z (m):</span>
+                  <input type="number" step = "0.000001" max="999999999" min="-999999999" name="coord_Z" class="form-control" disabled="" id="id_coord_Z">
+                  </div>
+
+                  <p class="help-block">Favor inserir coordenadas no DATUM IGS14, época 2010.0 (ITRF 2014)</p>
+              </div><!-- /.col-lg-6 -->
+            </div><!-- /.row -->
+          </div><!-- /.form-group -->
+
+
+
+
+
+        <button type="submit" class="btn btn-default btn-lg">Enviar</button>
+      </form>
     </div> <!-- /container -->
 
 {% endblock %}

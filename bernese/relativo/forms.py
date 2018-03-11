@@ -1,0 +1,75 @@
+from django import forms
+
+class simpleRelative(forms.Form):
+
+	email = forms.EmailField(
+		label = 'Email',
+		max_length = 250,
+		widget = forms.EmailInput(
+			attrs = {'class': 'form-control'}
+			)
+		)
+
+	rinexBaseFile = forms.FileField(
+		label = 'Arquivo rinex da base',
+		max_length = 250,
+		widget = forms.ClearableFileInput(
+			attrs = {'class': 'form-control'},
+			)
+		)
+
+	rinexRoverFile = forms.FileField(
+		label = 'Arquivo rinex do rover',
+		max_length = 250,
+		widget = forms.ClearableFileInput(
+			attrs = {'class': 'form-control'},
+			)
+		)
+
+	choice_coord_from = forms.ChoiceField(
+		label = 'Coordenadas de referência (BASE)',
+		choices = (
+			('COORD_FROM_RINEX', 'No cabeçalho do arquivo rinex',),
+			('COORD_USER_DEFINED', 'Inserir manualmente',)
+			),
+		widget=forms.RadioSelect(
+			attrs={'class': 'list-group'},
+			)
+		)
+
+	coord_X = forms.DecimalField(
+		label = ' X (m)',
+		max_digits = 15,
+		decimal_places = 6,
+		disabled = True,
+		required = False,
+		widget = forms.NumberInput(
+			attrs = {'class': 'form-control'}
+			)
+		)
+
+	coord_Y = forms.DecimalField(
+		label = 'Y (m)',
+		max_digits = 15,
+		decimal_places = 6,
+		disabled = True,
+		required = False,
+		widget = forms.NumberInput(
+			attrs = {'class': 'form-control'}
+			)
+		)
+
+	coord_Z = forms.DecimalField(
+		label = 'Z (m)',
+		max_digits = 15,
+		decimal_places = 6,
+		disabled = True,
+		required = False,
+		widget = forms.NumberInput(
+			attrs = {'class': 'form-control'}
+			)
+		)
+
+	# TODO inserir época da coordenada para entrar no arquivo CRD
+
+	# TODO inserir placa tectonica em que a estação se encontra

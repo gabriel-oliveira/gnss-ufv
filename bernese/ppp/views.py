@@ -1,14 +1,16 @@
 from django.shortcuts import render
 from .forms import simplePPP
-from os import path
 from datetime import datetime
 from bernese.core.apiBernese import *
 from bernese.core.rinex import *
 from threading import Thread
+from bernese.core.log import log
+import sys
 
 def index(request):
 	template_name = 'ppp/index.html'
 	context = {}
+	erroMsg = 'Erro'
 	context['isPPP'] = True
 
 	if request.method == 'POST':
@@ -19,11 +21,11 @@ def index(request):
 
 			f = request.FILES['rinexFile']
 
-			(status,erroMsg) = isRinex(f)
+			(f_isOK,erroMsg) = isRinex(f)
 
-			if status: (status,erroMsg,header,pathTempFile) = readRinexObs(f)
+			if f_isOK: (f_isOK,erroMsg,header,pathTempFile) = readRinexObs(f)
 
-			if status:
+			if f_isOK:
 
 				bpeName = 'bern' + '{:03d}'.format(datetime.now().timetuple().tm_yday)
 				bpeName += '_' +  '{:02d}'.format(datetime.now().timetuple().tm_hour)
@@ -37,11 +39,26 @@ def index(request):
 				headers = [header]
 				pathTempFiles = [pathTempFile]
 
-				pppBPE = ApiBernese(bpeName,headers,form.cleaned_data['email'],pathTempFiles)
-				Thread(name=bpeName,target=pppBPE.runBPE,kwargs={'prcType': 'PPP'}).start()
+				try:
 
-				context['isOK'] = True
-				form = simplePPP()
+					# Nova instancia da API para o Bernese
+					pppBPE = ApiBernese(bpeName,headers,form.cleaned_data['email'],pathTempFiles)
+
+					# Abrindo novo processo para a solicitação
+					Thread(name=bpeName,target=pppBPE.runBPE,kwargs={'prcType': 'PPP'}).start()
+
+					context['isOK'] = True  # retorno ao usuario de solicitação enviada com sucesso
+					form = simplePPP()      # Novo formulário em branco
+
+				except Exception as e:
+
+					context['isErro'] = True
+					context['erroMsg'] = "Erro ao solicitar processamento. Por favor tente novamente."
+
+					log('Erro ao solicitar processamento: ' + bpeName)
+					e_Msg = sys.exc_info()
+					log(str(e_Msg[0]))
+					log(str(e_Msg[1]))
 
 			else:
 				context['isErro'] = True

@@ -81,13 +81,15 @@ def readRinexObs(rnxFile):
 
         # TODO ler intervalo de observação
         # primeira observação é facil mas e a ultima???
+
         if floor(verRinex) == 2:
             rinex_dir = 'RINEX'
         # elif floor(verRinex) == 3:
         #     rinex_dir = 'RINEX3'
         else:
             erroMsg = 'Sem suporte para a versão Rinex ' + str(verRinex)
-            return False, erroMsg, header
+            return False, erroMsg, header, rnxTempName
+            # fim com erro de readRinexObs()
 
         # Salva arquivo em pasta de arquivos temporários
         rnxTempName = path.join(RINEX_UPLOAD_TEMP_DIR, rnxFile.name)
@@ -109,7 +111,7 @@ def readRinexObs(rnxFile):
         erroMsg = 'Erro ao ler arquivo Rinex.'
 
         return False, erroMsg, header, rnxTempName
-# fim com erro de readRinexObs()
+    # fim com erro de readRinexObs()
 
 
 def date2yearDay(epoch):
@@ -139,6 +141,6 @@ def date2gpsWeek(epoch):
     delta = epoch - START_DAY_GPS
     delta_weeks = delta.days/7
     weeks = floor(delta_weeks)
-    dayOfWeek = floor((delta_weeks % 1 + 0.001) * 7) # Gambiarra -> timetuple resolve
+    dayOfWeek = floor((delta_weeks % 1 + 0.001) * 7) # TODO Gambiarra -> timetuple resolve
 
     return '{:04d}{:01d}'.format(weeks,dayOfWeek)

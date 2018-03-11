@@ -1,5 +1,5 @@
 import sys
-import traceback
+# import traceback
 import urllib.request
 import glob
 import threading
@@ -60,6 +60,7 @@ class ApiBernese:
 
         except Exception as e:
 
+            log('Erro ao copiar Rinex para o Datapool')
             erroMsg = sys.exc_info()
             log(str(erroMsg[0]))
             log(str(erroMsg[1]))
@@ -135,7 +136,7 @@ class ApiBernese:
         pABBfile = path.join(ref52_datapool_dir,campaignName+'.ABB')
         # pVELfile = path.join(ref52_datapool_dir,campaignName+'.VEL')
 
-
+        # Gerando arquivo PLD (placa tectonica da estação)
         with open(pPLDfile,'w') as f:
 
             f.write(PLD_HEADER_TEMPLATE_FILE.format(**{'DATUM': 'IGS14'}))
@@ -144,18 +145,31 @@ class ApiBernese:
                 f.write(PLD_BODY_TEMPLATE_FILE.format(**header))
 
 
+        # Gerando arquivo STA (tipo do receptor e antena)
         with open(pSTAfile,'w') as f:
-            f.write(STA_TEMPLATE_FILE.format(**self.headers[0]))
+
+            f.write(STA_HEADER_T1_TEMPLATE_FILE)
+
+            for header in self.headers:
+                f.write(STA_BODY1_TEMPLATE_FILE.format(**header))
+
+            f.write(STA_HEADER_T2_TEMPLATE_FILE)
+
+            for header in self.headers:
+                f.write(STA_BODY2_TEMPLATE_FILE.format(**header))
+
+            f.write(STA_FOOTER_TEMPLATE_FILE)
 
 
+        # Gerando arquivo CRD (coordenadas)
         with open(pCRDfile,'w') as f:
 
-            f.write(CRD_HEADER_TEMPLATE_FILE.format(**{'DATUM': 'IGS14', 'EPOCH': '1980-01-01 00:00:00'}))
+            f.write(CRD_HEADER_TEMPLATE_FILE.format(**{'DATUM': 'IGS14', 'EPOCH': '2010-01-01 00:00:00'}))
 
             for header in self.headers:
                 f.write(CRD_BODY_TEMPLATE_FILE.format(**header))
 
-
+        # Gerando arquivo ABB (Abreviação do nome da estação)
         with open(pABBfile,'w') as f:
 
             f.write(ABB_HEADER_TEMPLATE_FILE)
@@ -163,7 +177,7 @@ class ApiBernese:
             for header in self.headers:
                 f.write(ABB_BODY_TEMPLATE_FILE.format(**header))
 
-
+        # Gerando arquivo VEL (velocidades da estação)
         # with open(pVELfile,'w') as f:
         #
         #     f.write(VEL_HEADER_TEMPLATE_FILE.format(**{'DATUM': 'IGS14'}))
@@ -174,13 +188,10 @@ class ApiBernese:
 
     def runBPE(self,prcType):
 
-        print(prcType)
-
         # Aguarda a vez na fila de processamento do bernese
         self.filaBPE()
 
         #Salva arquivo rinex em DATAPOOL
-        # TODO Salvar mais de um arquivo
         if not self.saveRinex():
             log('Erro ao salvar o arquivo rinex no servidor')
 
@@ -198,18 +209,28 @@ class ApiBernese:
             self.clearCampaign()
             return False
 
-        arg = 'E:\\Sistema\\runasit.exe "C:\\Perl64\\bin\\perl.exe E:\\Sistema\\pppdemo_pcs.pl '
-        arg += str(self.dateFile.year) + ' ' + '{:03d}'.format(date2yearDay(self.dateFile)) + '0"'
-
-        logMsg = 'Rodando BPE: ' + self.bpeName + ' - Arquivo(s): '
-        for rnxFile in self.pathRnxTempFiles:
-            logMsg += path.basename(rnxFile) + ' '
-
-        log(logMsg)
-
         try:
+
+            if prcType == 'PPP':
+                arg = 'E:\\Sistema\\runasit.exe "C:\\Perl64\\bin\\perl.exe E:\\Sistema\\pppdemo_pcs.pl '
+            elif prcType == 'RLT':
+                arg = 'E:\\Sistema\\runasit.exe "C:\\Perl64\\bin\\perl.exe E:\\Sistema\\rltufv_pcs.pl '
+            else:
+                raise Exception('prcType not defined in ApiBernese')
+
+            arg += str(self.dateFile.year) + ' ' + '{:03d}'.format(date2yearDay(self.dateFile)) + '0"'
+
+            logMsg = 'Rodando BPE: ' + self.bpeName + ' - Arquivo(s): '
+            for rnxFile in self.pathRnxTempFiles:
+                logMsg += path.basename(rnxFile) + ' '
+            log(logMsg)
+
+            # descomentar para teste fora do servidor
             runPCFout = 'Ambiente de teste'
+            print(arg)
             raise Exception('Ambiente de teste')
+            #
+
             with Popen(arg,stdout=PIPE,stderr=PIPE,stdin=DEVNULL,cwd='E:\\Sistema') as pRun:
                 runPCFout = pRun.communicate()
                 erroBPE = runPCFout[1]
@@ -230,12 +251,12 @@ class ApiBernese:
             # TODO pegar o resultado na campanha ./OUT/PPPxxxx.PRC
             #      e não salvar os resultados em SAVEDISK
 
-            prcFile = 'PPP' + str(self.dateFile.year)[-2:] + '{:03d}'.format(date2yearDay(self.dateFile)) + '0.PRC'
-            prcPathFile = str(SAVEDISK_DIR) + '\\PPP\\' + str(self.dateFile.year) +'\\OUT\\' + prcFile
+            prcFile = prcType + str(self.dateFile.year)[-2:] + '{:03d}'.format(date2yearDay(self.dateFile)) + '0.PRC'
+            prcPathFile = str(SAVEDISK_DIR) + '\\' + prcType + '\\' + str(self.dateFile.year) +'\\OUT\\' + prcFile
 
             if path.isfile(prcPathFile):
 
-                with open(prcPathFile,'r') as pfile, open(path.join(SAVEDISK_DIR,'PPP',str(self.dateFile.year),'OUT',prcFile[:-3]+'txt'),'w') as rfile:
+                with open(prcPathFile,'r') as pfile, open(path.join(SAVEDISK_DIR,prcType,str(self.dateFile.year),'OUT',prcFile[:-3]+'txt'),'w') as rfile:
                     rfile.write(pfile.read())
 
                 msg = 'Arquivo(s) '
@@ -279,6 +300,7 @@ class ApiBernese:
             path.join(CAMPAIGN_DIR,'RAW'),
             path.join(CAMPAIGN_DIR,'OBS'),
             path.join(CAMPAIGN_DIR,'SOL'),
+            # path.join(CAMPAIGN_DIR,'STA'),
             path.join(SAVEDISK_DIR,'PPP',str(self.dateFile.year),'OUT'),
         ]
         log('Cleaning Campaign')
