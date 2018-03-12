@@ -1,12 +1,21 @@
 {% extends 'base.html' %}
 {% block content %}
 <div class="container theme-showcase" role="main">
+
   <div class="alert alert-warning alert-dismissible" role="alert">
     <button type="button" class="close" data-dismiss="alert" aria-label="Close">
       <span aria-hidden="true">&times;</span>
     </button>
     Aplicação em teste.
   </div>
+
+  <div class="alert alert-success alert-dismissible" role="alert" tabindex="0" id="uploadAlert" style="display:None">
+    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+      <span aria-hidden="true">&times;</span>
+    </button>
+    Aguarde o upload do arquivo!
+  </div>
+
   <h2>PPP</h2>
   <br>
   {% if isOK %}
@@ -25,7 +34,7 @@
       {{ erroMsg }}
     </div>
   {% endif %}
-  <form method="post" enctype="multipart/form-data">
+  <form method="post" enctype="multipart/form-data" id="pppForm">
     {% csrf_token %}
     {% for field in form %}
     <div class="form-group">
@@ -40,7 +49,13 @@
       {% endif %}
     </div>
     {% endfor %}
-    <button type="submit" class="btn btn-default btn-lg">Enviar</button>
+    <button type="submit" class="btn btn-default btn-lg" onclick="
+      if(document.getElementById('pppForm').checkValidity()){
+        document.getElementById('uploadAlert').style.display='block';
+        document.getElementById('uploadAlert').focus();
+      }">
+      Enviar
+    </button>
   </form>
 </div> <!-- /container -->
 

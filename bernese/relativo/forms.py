@@ -26,6 +26,44 @@ class simpleRelative(forms.Form):
 			)
 		)
 
+	PLATE_CHOICES = (
+		('SOAM', 'SOAM - Sul-Americana',),
+		('AFRC', 'AFRC - Africa'),
+		('ANTA', 'ANTA - Antarctica'),
+		('ARAB', 'ARAB - Arabia'),
+		('AUST', 'AUST - Australia'),
+		('CARB', 'CARB - Caribbean'),
+		('COCO', 'COCO - Cocos (north of NAZC, south of NOAM, east of CARB)'),
+		('EURA', 'EURA - Eurasia'),
+		('INDI', 'INDI - India'),
+		('JUFU', 'JUFU - Juan de Fuca (in between northern NOAM and PCFC)'),
+		('NAZC', 'NAZC - Nazca (west of SOAM, east of PCFC)'),
+		('NOAM', 'NOAM - North America'),
+		('SOAM', 'SOAM - South America'),
+		('PCFC', 'PCFC - Pacific'),
+		('PHIL', 'PHIL - Philippine'),
+		)
+
+	plateBase = forms.ChoiceField(
+		label = 'Selecione a placa tectônica da estação Base:',
+		choices = PLATE_CHOICES,
+		initial = 'SOAM',
+		required = True,
+		widget=forms.Select(
+			attrs={'class': 'form-control'},
+			)
+		)
+
+	plateRover = forms.ChoiceField(
+			label = 'Selecione a placa tectônica da estação Rover:',
+			choices = PLATE_CHOICES,
+			initial = 'SOAM',
+			required = True,
+			widget=forms.Select(
+				attrs={'class': 'form-control'},
+				)
+		)
+
 	choice_coord_from = forms.ChoiceField(
 		label = 'Coordenadas de referência (BASE)',
 		choices = (
@@ -71,5 +109,3 @@ class simpleRelative(forms.Form):
 		)
 
 	# TODO inserir época da coordenada para entrar no arquivo CRD
-
-	# TODO inserir placa tectonica em que a estação se encontra

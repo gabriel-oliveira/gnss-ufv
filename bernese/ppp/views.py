@@ -35,6 +35,7 @@ def index(request):
 				header['ID'] = 1
 				header['ID2'] = header['MARKER NAME'][:2]
 				header['FLAG'] = ''
+				header['PLATE'] = form.cleaned_data['plate']
 
 				headers = [header]
 				pathTempFiles = [pathTempFile]

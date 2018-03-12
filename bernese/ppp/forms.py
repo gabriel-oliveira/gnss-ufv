@@ -18,3 +18,29 @@ class simplePPP(forms.Form):
 
 			)
 		)
+
+	plate = forms.ChoiceField(
+		label = 'Selecione a placa tectônica da estação:',
+		choices = (
+			('SOAM', 'SOAM - Sul-Americana',),
+			('AFRC', 'AFRC - Africa'),
+			('ANTA', 'ANTA - Antarctica'),
+			('ARAB', 'ARAB - Arabia'),
+			('AUST', 'AUST - Australia'),
+			('CARB', 'CARB - Caribbean'),
+			('COCO', 'COCO - Cocos (north of NAZC, south of NOAM, east of CARB)'),
+			('EURA', 'EURA - Eurasia'),
+			('INDI', 'INDI - India'),
+			('JUFU', 'JUFU - Juan de Fuca (in between northern NOAM and PCFC)'),
+			('NAZC', 'NAZC - Nazca (west of SOAM, east of PCFC)'),
+			('NOAM', 'NOAM - North America'),
+			('SOAM', 'SOAM - South America'),
+			('PCFC', 'PCFC - Pacific'),
+			('PHIL', 'PHIL - Philippine'),
+			),
+		initial = 'SOAM',
+		required = True,
+		widget=forms.Select(
+			attrs={'class': 'form-control'},
+			)
+	)

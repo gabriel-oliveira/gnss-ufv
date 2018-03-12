@@ -36,6 +36,7 @@ def index(request):
 					b_header['ID'] = 1
 					b_header['ID2'] = b_header['MARKER NAME'][:2]
 					b_header['FLAG'] = 'B'
+					b_header['PLATE'] = form.cleaned_data['plateBase']
 
 					# Definindo coordenada da base informada pelo usuario
 					if request.POST['choice_coord_from'] == 'COORD_USER_DEFINED':
@@ -54,6 +55,7 @@ def index(request):
 						r_header['ID'] = 2
 						r_header['FLAG'] = ''
 						r_header['ID2'] = ''
+						r_header['PLATE'] = form.cleaned_data['plateRover']
 
 						# Define two char ABBreviation
 						if r_header['MARKER NAME'][:2] != b_header['MARKER NAME'][:2]:
