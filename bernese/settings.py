@@ -29,7 +29,7 @@ RINEX_UPLOAD_TEMP_DIR = os.path.join(BASE_DIR,'RINEX_UPLOAD_TEMP_DIR')
 SECRET_KEY = '******'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = ['*']
 
@@ -139,3 +139,7 @@ EMAIL_HOST_USER = 'gnss.ufv@gmail.com'
 EMAIL_HOST_PASSWORD = '******'   # TODO salvar senhas em outro arquivo
 EMAIL_PORT = 587
 CONTACT_EMAIL = 'gnss.ufv@gmail.com'
+
+ADMINS = [('Gabriel','gabriel.diniz@ufv.br')]
+
+SERVER_EMAIL = 'gnss.ufv@gmail.com'

@@ -22,3 +22,5 @@ urlpatterns = [
     url(r'^ppp/', include('bernese.ppp.urls', namespace='ppp')),
     url(r'^relativo/', include('bernese.relativo.urls', namespace='relativo')),
 ]
+
+handler500 = 'bernese.core.views.custom_error_500_view'

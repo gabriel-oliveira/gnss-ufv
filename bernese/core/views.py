@@ -110,3 +110,8 @@ def monitor(request):
 	if not nproc: msg += 'Nenhum'
 
 	return HttpResponse(msg)
+
+def custom_error_500_view(request):
+	template_name = '500.html'
+	context = {}
+	return render(request, template_name, context)
