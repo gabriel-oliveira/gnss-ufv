@@ -38,10 +38,11 @@ def tools(request):
 			sEphFile = 'http://www.aiub.unibe.ch/download/CODE/{:04d}/COD{}.EPH.Z'.format(rnxDate.year,weekDay)
 			sIonFile = 'http://www.aiub.unibe.ch/download/CODE/{:04d}/COD{}.ION.Z'.format(rnxDate.year,weekDay)
 			sErpFile = 'http://www.aiub.unibe.ch/download/CODE/{:04d}/COD{}.ERP.Z'.format(rnxDate.year,weekDay)
+			sErpWFile = 'http://www.aiub.unibe.ch/download/CODE/{:04d}/COD{}7.ERP.Z'.format(rnxDate.year,weekDay[:4])
 			sP1C1File = 'http://www.aiub.unibe.ch/download/CODE/{:04d}/P1C1{:02d}{:02d}.DCB.Z'.format(rnxDate.year,anoRed,rnxDate.month)
 			sP1P2File = 'http://www.aiub.unibe.ch/download/CODE/{:04d}/P1P2{:02d}{:02d}.DCB.Z'.format(rnxDate.year,anoRed,rnxDate.month)
 
-			sfileList = [sClkFile, sEphFile, sIonFile, sErpFile, sP1C1File, sP1P2File]
+			sfileList = [sClkFile, sEphFile, sIonFile, sErpFile, sErpWFile, sP1C1File, sP1P2File]
 
 			# Verifica se o arquivo existe, se não existir remove da lista
 			for sfile in sfileList:

@@ -94,8 +94,14 @@ class ApiBernese:
             sEphFile = 'COD{}.EPH.Z'.format(weekDay)
             sIonFile = 'COD{}.ION.Z'.format(weekDay)
             sErpFile = 'COD{}.ERP.Z'.format(weekDay)
+            sErpWFile = 'COD{}7.ERP.Z'.format(weekDay[:4])
             sP1C1File = 'P1C1{:02d}{:02d}.DCB.Z'.format(anoRed,rnxDate.month)
             sP1P2File = 'P1P2{:02d}{:02d}.DCB.Z'.format(anoRed,rnxDate.month)
+
+            try:
+                testLink = urlopen(sErpFile)
+            except:
+                sErpFile = sErpWFile
 
             sfileList = [sClkFile, sEphFile, sIonFile, sErpFile, sP1C1File, sP1P2File]
 

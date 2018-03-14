@@ -32,9 +32,13 @@ def setRnxName(header):
     dia = int(hDate[2])
 
     diaDoAno = date2yearDay(datetime(year=ano,month=mes,day=dia))
-    anoRed = (ano - 2000)
 
-    rnxName = header['MARKER NAME'][:4].upper() + '{:03d}'.format(diaDoAno) + '0.' + str(anoRed) + 'O'
+    if ano > 1999:
+        anoRed = ano - 2000
+    else:
+        anoRed = ano - 1900
+
+    rnxName = header['MARKER NAME'][:4].upper() + '{:03d}'.format(diaDoAno) + '0.' + '{:02d}'.format(anoRed) + 'O'
 
     return rnxName
 
@@ -77,7 +81,9 @@ def readRinexObs(rnxFile):
         # v3.xx
         # header['SYS / # / OBS TYPES'] =
         #turn into int number of observations
-        header['INTERVAL'] = float(header['INTERVAL'][:10])
+
+        # TODO deu erro no processamento do William
+        # header['INTERVAL'] = float(header['INTERVAL'][:10])
 
         # TODO ler intervalo de observação
         # primeira observação é facil mas e a ultima???
