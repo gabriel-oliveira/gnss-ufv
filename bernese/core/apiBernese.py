@@ -8,9 +8,10 @@ from os import path, remove
 from subprocess import Popen, run, PIPE, DEVNULL
 from bernese.core.berneseFilesTemplate import *
 from bernese.core.rinex import *
-from bernese.settings import DATAPOOL_DIR, SAVEDISK_DIR
+from bernese.settings import DATAPOOL_DIR, SAVEDISK_DIR, CAMPAIGN_DIR, RESULTS_DIR, DEBUG
 from bernese.core.mail import send_result_email
 from bernese.core.log import log
+from zipfile import ZipFile, ZIP_DEFLATED
 
 class ApiBernese:
 
@@ -20,6 +21,9 @@ class ApiBernese:
     # }
 
     headers = []
+
+
+#-------------------------------------------------------------------------------
 
     def __init__(self, bpeName, rheaders, remail, pathTempFiles):
 
@@ -35,14 +39,14 @@ class ApiBernese:
         self.dateFile = datetime(year=ano,month=mes,day=dia)
 
 
+#-------------------------------------------------------------------------------
+
     def haveEphem(rnxDate):
         # TODO verificar efemerides
         return True
 
-    def newCampaign():
-        # TODO Criador de campanha
-        pass
 
+#-------------------------------------------------------------------------------
 
     def saveRinex(self):
     # Salva o arquivo no servidor (DATAPOOL\RINEX)
@@ -67,7 +71,12 @@ class ApiBernese:
 
             return False
 
+
+#-------------------------------------------------------------------------------
+
     def getEphem(self):
+
+        # if DEBUG: return True
 
     # TODO Se não achar efemérides do dia procurar pela da semana e/ou IGS
 
@@ -123,6 +132,9 @@ class ApiBernese:
             # for tb in traceback.format_exc(erroMsg[2]): log(tb)
 
             return False
+
+
+#-------------------------------------------------------------------------------
 
     def setSTAfiles(self):
 
@@ -186,6 +198,8 @@ class ApiBernese:
         #         f.write(VEL_BODY_TEMPLATE_FILE.format(**header))
 
 
+#-------------------------------------------------------------------------------
+
     def runBPE(self,prcType):
 
         # Aguarda a vez na fila de processamento do bernese
@@ -246,18 +260,13 @@ class ApiBernese:
 
         log('BPE: ' + self.bpeName + ' finalizado')
 
+        # if DEBUG: erroBPE = False
+
         if not erroBPE:
 
-            # TODO pegar o resultado na campanha ./OUT/PPPxxxx.PRC
-            #      e não salvar os resultados em SAVEDISK
+            result = self.getResult(prcType)
 
-            prcFile = prcType + str(self.dateFile.year)[-2:] + '{:03d}'.format(date2yearDay(self.dateFile)) + '0.PRC'
-            prcPathFile = str(SAVEDISK_DIR) + '\\' + prcType + '\\' + str(self.dateFile.year) +'\\OUT\\' + prcFile
-
-            if path.isfile(prcPathFile):
-
-                with open(prcPathFile,'r') as pfile, open(path.join(SAVEDISK_DIR,prcType,str(self.dateFile.year),'OUT',prcFile[:-3]+'txt'),'w') as rfile:
-                    rfile.write(pfile.read())
+            if result:
 
                 msg = 'Arquivo(s) '
                 for rnxFile in self.pathRnxTempFiles:
@@ -265,10 +274,14 @@ class ApiBernese:
                 msg += 'processado(s) com sucesso.\n'
                 msg += 'Em anexo o resultado do processamento.'
 
-                send_result_email(self.email,msg, str(prcPathFile)[:-3]+'txt')
-                self.clearCampaign()
+                send_result_email(self.email,msg, result)
+
+                # Limpa a pasta da campanha em ambiente de produção (servidor)
+                if not DEBUG:
+                    self.clearCampaign()
 
                 return True
+
             else:
                 log('Arquivo com resultado do processamento não encontrado')
 
@@ -287,14 +300,62 @@ class ApiBernese:
             msg += '. \nPara detalhes sobre o erro favor entrar em contato.'
             send_result_email(self.email,msg)
 
-        # self.clearCampaign()
+        # Limpa a pasta da campanha em ambiente de produção (servidor)
+        if not DEBUG:
+            self.clearCampaign()
 
         return False
 
 
+#-------------------------------------------------------------------------------
+
+    def getResult(self,prcType):
+
+        prcFile = prcType + str(self.dateFile.year)[-2:] + '{:03d}'.format(date2yearDay(self.dateFile)) + '0.PRC'
+        prcPathFile = path.join(CAMPAIGN_DIR,'OUT',prcFile)
+
+        if prcType == 'RLT':
+
+            snxFile = 'F1_' + str(self.dateFile.year)[-2:] + '{:03d}'.format(date2yearDay(self.dateFile)) + '0.SNX'
+            snxFilePath = path.join(CAMPAIGN_DIR,'SOL',snxFile)
+
+            outFile = 'F1_' + str(self.dateFile.year)[-2:] + '{:03d}'.format(date2yearDay(self.dateFile)) + '0.OUT'
+            outFilePath = path.join(CAMPAIGN_DIR,'OUT',outFile)
+
+            resultListFiles = [prcPathFile, snxFilePath, outFilePath]
+
+        elif prcType == 'PPP':
+
+            snxFile = 'RED' + str(self.dateFile.year)[-2:] + '{:03d}'.format(date2yearDay(self.dateFile)) + '0.SNX'
+            snxFilePath = path.join(CAMPAIGN_DIR,'SOL',snxFile)
+
+            outFile = 'RED' + str(self.dateFile.year)[-2:] + '{:03d}'.format(date2yearDay(self.dateFile)) + '0.OUT'
+            outFilePath = path.join(CAMPAIGN_DIR,'OUT',outFile)
+
+            kinFile = 'KIN' + '{:03d}'.format(date2yearDay(self.dateFile)) + '0' + self.headers[0]['MARKER NAME'][:4] + '.SUM'
+            kinFilePath = path.join(CAMPAIGN_DIR,'OUT',kinFile)
+
+            resultListFiles = [prcPathFile, snxFilePath, outFilePath, kinFilePath]
+
+        else:
+            return False
+
+        resultZipFile = path.join(RESULTS_DIR,self.bpeName + '.zip')
+
+        with ZipFile(resultZipFile, 'x', ZIP_DEFLATED) as rZipFile:
+            for file in resultListFiles:
+                if path.isfile(file):
+                    rZipFile.write(file, path.basename(file))
+                else:
+                    log('Arquivo ' + path.basename(file) + ' não encontrado.\n')
+
+        return resultZipFile
+
+
+#-------------------------------------------------------------------------------
 
     def clearCampaign(self):
-        CAMPAIGN_DIR = 'E:\\Sistema\\GPSDATA\\CAMPAIGN52\\SYSTEM\\'
+
         listdir = [
             path.join(DATAPOOL_DIR,'RINEX'),
             path.join(CAMPAIGN_DIR,'RAW'),
@@ -303,6 +364,7 @@ class ApiBernese:
             # path.join(CAMPAIGN_DIR,'STA'),
             path.join(SAVEDISK_DIR,'PPP',str(self.dateFile.year),'OUT'),
         ]
+
         log('Cleaning Campaign')
         for dir in listdir:
             files = glob.glob(path.join(dir, '*'))
@@ -310,6 +372,7 @@ class ApiBernese:
                 remove(f)
 
 
+#-------------------------------------------------------------------------------
 
     def filaBPE(self):
 

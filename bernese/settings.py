@@ -19,6 +19,8 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # SAVEDISK_DIR = 'E:\\Sistema\\GPSDATA\\SAVEDISK\\'
 DATAPOOL_DIR = os.path.join(BASE_DIR,'DATAPOOL')
 SAVEDISK_DIR = os.path.join(BASE_DIR,'SAVEDISK')
+CAMPAIGN_DIR = os.path.join(BASE_DIR,'CAMPAIGN52','SYSTEM')
+RESULTS_DIR = os.path.join(BASE_DIR,'RESULTADOS')
 
 RINEX_UPLOAD_TEMP_DIR = os.path.join(BASE_DIR,'RINEX_UPLOAD_TEMP_DIR')
 
@@ -26,10 +28,10 @@ RINEX_UPLOAD_TEMP_DIR = os.path.join(BASE_DIR,'RINEX_UPLOAD_TEMP_DIR')
 # See https://docs.djangoproject.com/en/1.11/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = '******'
+SECRET_KEY = '&e#gbh6xhv$gyxe)hlttoe7a+r8h9e0y6-4$sy)#!i2=r0-n_+'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
@@ -130,16 +132,16 @@ STATIC_URL = '/static/'
 STATIC_ROOT = os.path.abspath(os.path.join(BASE_DIR, 'bernese', 'static'))
 
 #E-mail
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-# EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 DEFAULT_FROM_MAIL = 'GNSS-UFV <gnss.ufv@gmail.com>'
 EMAIL_USE_TLS = True
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_HOST_USER = 'gnss.ufv@gmail.com'
-EMAIL_HOST_PASSWORD = '******'   # TODO salvar senhas em outro arquivo
+EMAIL_HOST_PASSWORD = 'l3l4l5l6'   # TODO salvar senhas em outro arquivo
 EMAIL_PORT = 587
 CONTACT_EMAIL = 'gnss.ufv@gmail.com'
 
-ADMINS = [('Gabriel','gabriel.diniz@ufv.br')]
+ADMINS = [('Gabriel','engenheirogabrieloliveira@gmail.com')]
 
 SERVER_EMAIL = 'gnss.ufv@gmail.com'
