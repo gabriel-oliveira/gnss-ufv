@@ -28,7 +28,7 @@ RINEX_UPLOAD_TEMP_DIR = os.path.join(BASE_DIR,'RINEX_UPLOAD_TEMP_DIR')
 # See https://docs.djangoproject.com/en/1.11/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = '&e#gbh6xhv$gyxe)hlttoe7a+r8h9e0y6-4$sy)#!i2=r0-n_+'
+SECRET_KEY = '*******'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -138,10 +138,10 @@ DEFAULT_FROM_MAIL = 'GNSS-UFV <gnss.ufv@gmail.com>'
 EMAIL_USE_TLS = True
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_HOST_USER = 'gnss.ufv@gmail.com'
-EMAIL_HOST_PASSWORD = 'l3l4l5l6'   # TODO salvar senhas em outro arquivo
+EMAIL_HOST_PASSWORD = '******'   # TODO salvar senhas em outro arquivo
 EMAIL_PORT = 587
 CONTACT_EMAIL = 'gnss.ufv@gmail.com'
 
-ADMINS = [('Gabriel','engenheirogabrieloliveira@gmail.com')]
+ADMINS = [('Gabriel','gabriel.diniz@ufv.br'),('GNNS-UFV','gnss.ufv@gmail.com')]
 
 SERVER_EMAIL = 'gnss.ufv@gmail.com'
