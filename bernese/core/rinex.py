@@ -24,6 +24,8 @@ def isRinex(rnxFile):
         return False, erroMsg
 
 
+#-------------------------------------------------------------------------------
+
 def setRnxName(header):
 
     hDate = header['TIME OF FIRST OBS'].split()
@@ -43,6 +45,7 @@ def setRnxName(header):
     return rnxName
 
 
+#-------------------------------------------------------------------------------
 
 def readRinexObs(rnxFile):
 
@@ -72,8 +75,9 @@ def readRinexObs(rnxFile):
                                         header['REC # / TYPE / VERS'][40:]]
         header['ANT # / TYPE'] = [header['ANT # / TYPE'][:19],
                                 header['ANT # / TYPE'][20:40]]
-        header['MARKER NAME'] = header['MARKER NAME'].strip()
-        header['MARKER NUMBER'] = header['MARKER NUMBER'].strip()
+        header['MARKER NAME'] = header['MARKER NAME'].strip().upper()
+        header['MARKER NUMBER'] = header['MARKER NUMBER'].strip().upper()
+
         #observation types
         # v2.xx
         # header['# / TYPES OF OBSERV'] = header['# / TYPES OF OBSERV'].split()
@@ -120,6 +124,8 @@ def readRinexObs(rnxFile):
     # fim com erro de readRinexObs()
 
 
+#-------------------------------------------------------------------------------
+
 def date2yearDay(epoch):
 
     dia_mes = [31,28,31,30,31,30,31,31,30,31,30,31]
@@ -141,6 +147,8 @@ def date2yearDay(epoch):
 
     return yDay
 
+
+#-------------------------------------------------------------------------------
 
 def date2gpsWeek(epoch):
 

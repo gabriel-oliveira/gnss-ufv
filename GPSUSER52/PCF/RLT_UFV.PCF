@@ -239,7 +239,7 @@ V_MINUS  Session range begin (for COMPAR)         -6
 V_PLUS   Session range end                        +0
 V_SKIP   PRC file: indicator to repeat the sess.  
 V_SAVOBS Save observation files?                  N
-V_SAV    Save results?                            Y
+V_SAV    Save results?                            N
 V_DEL    Delete results?                          N
 #
 # DO NOT USE V_D, V_J, V_M, V_Y VARIABLES!

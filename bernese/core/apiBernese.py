@@ -1,14 +1,14 @@
 import sys
 # import traceback
 import urllib.request
-import glob
+from glob import glob
 import threading
 from datetime import datetime
 from os import path, remove
 from subprocess import Popen, run, PIPE, DEVNULL
 from bernese.core.berneseFilesTemplate import *
 from bernese.core.rinex import *
-from bernese.settings import DATAPOOL_DIR, SAVEDISK_DIR, CAMPAIGN_DIR, RESULTS_DIR, DEBUG
+from bernese.settings import DATAPOOL_DIR, SAVEDISK_DIR, CAMPAIGN_DIR, RESULTS_DIR
 from bernese.core.mail import send_result_email
 from bernese.core.log import log
 from zipfile import ZipFile, ZIP_DEFLATED
@@ -76,9 +76,7 @@ class ApiBernese:
 
     def getEphem(self):
 
-        # if DEBUG: return True
-
-    # TODO Se não achar efemérides do dia procurar pela da semana e/ou IGS
+    # TODO Se não achar efemérides do CODE pegar do IGS
 
         rnxDate = self.dateFile
 
@@ -98,6 +96,7 @@ class ApiBernese:
             sP1C1File = 'P1C1{:02d}{:02d}.DCB.Z'.format(anoRed,rnxDate.month)
             sP1P2File = 'P1P2{:02d}{:02d}.DCB.Z'.format(anoRed,rnxDate.month)
 
+            # Verifica se existe a efemeride do dia, se não pega a efemeride da semana
             try:
                 testLink = urlopen(sErpFile)
             except:
@@ -266,7 +265,6 @@ class ApiBernese:
 
         log('BPE: ' + self.bpeName + ' finalizado')
 
-        # if DEBUG: erroBPE = False
 
         if not erroBPE:
 
@@ -282,9 +280,7 @@ class ApiBernese:
 
                 send_result_email(self.email,msg, result)
 
-                # Limpa a pasta da campanha em ambiente de produção (servidor)
-                if not DEBUG:
-                    self.clearCampaign()
+                self.clearCampaign()
 
                 return True
 
@@ -306,9 +302,7 @@ class ApiBernese:
             msg += '. \nPara detalhes sobre o erro favor entrar em contato.'
             send_result_email(self.email,msg)
 
-        # Limpa a pasta da campanha em ambiente de produção (servidor)
-        if not DEBUG:
-            self.clearCampaign()
+        self.clearCampaign()
 
         return False
 
@@ -355,7 +349,11 @@ class ApiBernese:
                 else:
                     log('Arquivo ' + path.basename(file) + ' não encontrado.\n')
 
-        return resultZipFile
+        # Verifica se arquivo está vazio
+        if rZipFile.namelist():
+            return resultZipFile
+        else:
+            return False
 
 
 #-------------------------------------------------------------------------------
@@ -363,20 +361,36 @@ class ApiBernese:
     def clearCampaign(self):
 
         listdir = [
+
             path.join(DATAPOOL_DIR,'RINEX'),
-            path.join(CAMPAIGN_DIR,'RAW'),
+            path.join(DATAPOOL_DIR,'BSW52'),
+            path.join(DATAPOOL_DIR,'COD'),
+
+            path.join(CAMPAIGN_DIR,'ATM'),
+            path.join(CAMPAIGN_DIR,'BPE'),
+            path.join(CAMPAIGN_DIR,'GRD'),
             path.join(CAMPAIGN_DIR,'OBS'),
+            path.join(CAMPAIGN_DIR,'ORB'),
+            path.join(CAMPAIGN_DIR,'ORX'),
+            path.join(CAMPAIGN_DIR,'OUT'),
+            path.join(CAMPAIGN_DIR,'RAW'),
             path.join(CAMPAIGN_DIR,'SOL'),
-            # path.join(CAMPAIGN_DIR,'STA'),
-            path.join(SAVEDISK_DIR,'PPP',str(self.dateFile.year),'OUT'),
+            path.join(CAMPAIGN_DIR,'STA'),
+
         ]
 
-        log('Cleaning Campaign')
         for dir in listdir:
-            files = glob.glob(path.join(dir, '*'))
+            files = glob(path.join(dir, '*'))
             for f in files:
                 remove(f)
 
+        with open(path.join(CAMPAIGN_DIR,'STA','SESSIONS.SES'),'w') as ses_file:
+            ses_file.write(SES_TEMPLATE_FILE)
+
+        for f in glob(path.join(DATAPOOL_DIR,'REF52','SYSTEM.*')):
+            remove(f)
+
+        log('Campaign Cleaned')
 
 #-------------------------------------------------------------------------------
 

@@ -81,3 +81,21 @@ STATION NAME          FLG  FROM                 TO                   MARKER TYPE
 
 
 '''
+
+SES_TEMPLATE_FILE = '''
+LIST_OF_SESSIONS 1  "???0" "" "00 00 00" "" "23 59 59"
+  ## widget = uniline; check_strlen.1 = 4; numlines = 24
+  ## check_type.3 = time; check_type.5 = time
+
+MSG_LIST_OF_SESSIONS 1  "List of sessions"
+
+
+# BEGIN_PANEL NO_CONDITION #####################################################
+# SESSION TABLE                                                                #
+#                                                                              #
+#                START EPOCH         END EPOCH                                 #
+#    > ID__ yyyy_mm_dd hh_mm_ss yyyy_mm_dd hh_mm_ss     <                      # LIST_OF_SESSIONS
+#                                                                              #
+# END_PANEL ####################################################################
+
+'''
