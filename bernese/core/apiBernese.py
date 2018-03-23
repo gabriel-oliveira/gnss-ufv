@@ -8,7 +8,7 @@ from os import path, remove
 from subprocess import Popen, run, PIPE, DEVNULL
 from bernese.core.berneseFilesTemplate import *
 from bernese.core.rinex import *
-from bernese.settings import DATAPOOL_DIR, SAVEDISK_DIR, CAMPAIGN_DIR, RESULTS_DIR
+from bernese.settings import DATAPOOL_DIR, SAVEDISK_DIR, CAMPAIGN_DIR, RESULTS_DIR, DEBUG
 from bernese.core.mail import send_result_email
 from bernese.core.log import log
 from zipfile import ZipFile, ZIP_DEFLATED
@@ -25,12 +25,13 @@ class ApiBernese:
 
 #-------------------------------------------------------------------------------
 
-    def __init__(self, bpeName, rheaders, remail, pathTempFiles):
+    def __init__(self, bpeName, rheaders, remail, pathTempFiles,pathBlqTempFiles):
 
         self.headers = rheaders
         self.email = remail
         self.bpeName = bpeName
         self.pathRnxTempFiles = pathTempFiles
+        self.pathBlqTempFiles = pathBlqTempFiles
 
         hDate = self.headers[0]['TIME OF FIRST OBS'].split()
         ano = int(hDate[0])
@@ -65,6 +66,36 @@ class ApiBernese:
         except Exception as e:
 
             log('Erro ao copiar Rinex para o Datapool')
+            erroMsg = sys.exc_info()
+            log(str(erroMsg[0]))
+            log(str(erroMsg[1]))
+
+            return False
+
+
+#-------------------------------------------------------------------------------
+
+    def copyBlq(self):
+    # Salva o arquivo BLQ no servidor (DATAPOOL\REF52)
+
+        try:
+
+            i = 0
+            for blqFile in self.pathBlqTempFiles:
+
+                if blqFile:
+
+                    with open(blqFile,'r') as tmpFile, open(path.join(DATAPOOL_DIR,'REF52','SYSTEM.BLQ'),'w') as destination:
+                        aux = tmpFile.read()
+                        destination.write(aux)
+
+                i += 1
+
+            return True
+
+        except Exception as e:
+
+            log('Erro ao copiar arquivo BLQ para o Datapool')
             erroMsg = sys.exc_info()
             log(str(erroMsg[0]))
             log(str(erroMsg[1]))
@@ -109,7 +140,7 @@ class ApiBernese:
 
             for sfile in sfileList:
 
-                codURL = ('http://ftp.aiub.unibe.ch/CODE/{:04d}/{}'.format(rnxDate.year,sfile))
+                codURL = ('ftp://ftp.aiub.unibe.ch/CODE/{:04d}/{}'.format(rnxDate.year,sfile))
 
                 if sfile in [sIonFile, sP1C1File, sP1P2File]: target_dir = bsw52_datapool_dir
                 else: target_dir = cod_datapool_dir
@@ -212,7 +243,11 @@ class ApiBernese:
 
         #Salva arquivo rinex em DATAPOOL
         if not self.saveRinex():
-            log('Erro ao salvar o arquivo rinex no servidor')
+            log('Erro ao salvar o arquivo RINEX no servidor')
+
+        #Salva arquivo BLQ em DATAPOOL
+        if not self.copyBlq():
+            log('Erro ao salvar o arquivo BLQ no servidor')
 
         # Gera os arquivos do bernese com dados da estação
         self.setSTAfiles()
@@ -220,8 +255,8 @@ class ApiBernese:
         # Download das efemérides precisas
         if not self.getEphem():
             msg = 'Erro no processamento do(s) arquivo(s): '
-            for rnxFile in self.pathRnxTempFiles:
-                msg += path.basename(rnxFile) + ' '
+            for rnxHeader in self.headers:
+                msg += path.basename(rnxHeader['RAW_NAME']) + ' '
             msg += '. \n'
             msg += 'Falha no download das efemérides precisas.'
             send_result_email(self.email,msg)
@@ -240,16 +275,16 @@ class ApiBernese:
             arg += str(self.dateFile.year) + ' ' + '{:03d}'.format(date2yearDay(self.dateFile)) + '0"'
 
             logMsg = 'Rodando BPE: ' + self.bpeName + ' - Arquivo(s): '
-            for rnxFile in self.pathRnxTempFiles:
-                logMsg += path.basename(rnxFile) + ' '
+            for rnxHeader in self.headers:
+                logMsg += path.basename(rnxHeader['RAW_NAME']) + ' '
             log(logMsg)
 
             # descomentar para teste fora do servidor
-            runPCFout = 'Ambiente de teste'
-            print(arg)
-            raise Exception('Ambiente de teste')
-            #
+            # runPCFout = 'Ambiente de teste'
+            # print(arg)
+            # raise Exception('Ambiente de teste')
 
+            runPCFout = ['None']
             with Popen(arg,stdout=PIPE,stderr=PIPE,stdin=DEVNULL,cwd='E:\\Sistema') as pRun:
                 runPCFout = pRun.communicate()
                 erroBPE = runPCFout[1]
@@ -273,8 +308,8 @@ class ApiBernese:
             if result:
 
                 msg = 'Arquivo(s) '
-                for rnxFile in self.pathRnxTempFiles:
-                    msg += path.basename(rnxFile) + ' '
+                for rnxHeader in self.headers:
+                    msg += path.basename(rnxHeader['RAW_NAME']) + ' '
                 msg += 'processado(s) com sucesso.\n'
                 msg += 'Em anexo o resultado do processamento.'
 
@@ -290,8 +325,8 @@ class ApiBernese:
 
         log('BPE Erro: ' + repr(runPCFout))
         msg = 'Erro no processamento do(s) arquivo(s) '
-        for rnxFile in self.pathRnxTempFiles:
-            msg += path.basename(rnxFile) + ' '
+        for rnxHeader in self.headers:
+            msg += path.basename(rnxHeader['RAW_NAME']) + ' '
 
         bernErrorFile = 'E:\\Sistema\\GPSDATA\\CAMPAIGN52\\SYSTEM\\RAW\\BERN_MSG_ERROR.txt' # RUNBPE.pm alterado na linha 881
 
@@ -359,6 +394,14 @@ class ApiBernese:
 #-------------------------------------------------------------------------------
 
     def clearCampaign(self):
+
+        # TODO: Se o BPE der erro copiar os arquivos para uma pasta temp
+
+        # Não roda a função. Evita de limpar os dados para depuração.
+        if DEBUG:
+            return True
+
+        log('Clear Campaign Starting')
 
         listdir = [
 

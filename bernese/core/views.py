@@ -34,23 +34,24 @@ def tools(request):
 			else:
 				anoRed = rnxDate.year - 1900
 
-			sClkFile = 'http://www.aiub.unibe.ch/download/CODE/{:04d}/COD{}.CLK.Z'.format(rnxDate.year,weekDay)
-			sEphFile = 'http://www.aiub.unibe.ch/download/CODE/{:04d}/COD{}.EPH.Z'.format(rnxDate.year,weekDay)
-			sIonFile = 'http://www.aiub.unibe.ch/download/CODE/{:04d}/COD{}.ION.Z'.format(rnxDate.year,weekDay)
-			sErpFile = 'http://www.aiub.unibe.ch/download/CODE/{:04d}/COD{}.ERP.Z'.format(rnxDate.year,weekDay)
-			sErpWFile = 'http://www.aiub.unibe.ch/download/CODE/{:04d}/COD{}7.ERP.Z'.format(rnxDate.year,weekDay[:4])
-			sP1C1File = 'http://www.aiub.unibe.ch/download/CODE/{:04d}/P1C1{:02d}{:02d}.DCB.Z'.format(rnxDate.year,anoRed,rnxDate.month)
-			sP1P2File = 'http://www.aiub.unibe.ch/download/CODE/{:04d}/P1P2{:02d}{:02d}.DCB.Z'.format(rnxDate.year,anoRed,rnxDate.month)
+			sClkFile = 'ftp://ftp.aiub.unibe.ch/CODE/{:04d}/COD{}.CLK.Z'.format(rnxDate.year,weekDay)
+			sEphFile = 'ftp://ftp.aiub.unibe.ch/CODE/{:04d}/COD{}.EPH.Z'.format(rnxDate.year,weekDay)
+			sIonFile = 'ftp://ftp.aiub.unibe.ch/CODE/{:04d}/COD{}.ION.Z'.format(rnxDate.year,weekDay)
+			sErpFile = 'ftp://ftp.aiub.unibe.ch/CODE/{:04d}/COD{}.ERP.Z'.format(rnxDate.year,weekDay)
+			sErpWFile = 'ftp://ftp.aiub.unibe.ch/CODE/{:04d}/COD{}7.ERP.Z'.format(rnxDate.year,weekDay[:4])
+			sP1C1File = 'ftp://ftp.aiub.unibe.ch/CODE/{:04d}/P1C1{:02d}{:02d}.DCB.Z'.format(rnxDate.year,anoRed,rnxDate.month)
+			sP1P2File = 'ftp://ftp.aiub.unibe.ch/CODE/{:04d}/P1P2{:02d}{:02d}.DCB.Z'.format(rnxDate.year,anoRed,rnxDate.month)
 
 			sfileList = [sClkFile, sEphFile, sIonFile, sErpFile, sErpWFile, sP1C1File, sP1P2File]
 
 			# Verifica se o arquivo existe, se não existir remove da lista
 			for sfile in sfileList:
 				try:
-					testLink = urlopen(sfile)
+					with urlopen(sfile) as l:
+						pass                   # Url valida
 				except:
 					i = sfileList.index(sfile)
-					sfileList[i] = ''
+					sfileList[i] = ''          # Url invalida
 
 			context['fileList'] = sfileList
 

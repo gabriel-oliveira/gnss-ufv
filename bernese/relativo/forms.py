@@ -64,6 +64,16 @@ class simpleRelative(forms.Form):
 				)
 		)
 
+	blqFile = forms.FileField(
+		label = 'Arquivo BLQ (Ocean Tide Loading)',
+		max_length = 250,
+		required = False,
+		widget = forms.ClearableFileInput(
+			attrs={'class': 'form-control'},
+
+			)
+		)
+
 	choice_coord_from = forms.ChoiceField(
 		label = 'Coordenadas de referência (BASE)',
 		choices = (

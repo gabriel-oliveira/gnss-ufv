@@ -3,6 +3,7 @@ from .forms import simplePPP
 from datetime import datetime
 from bernese.core.apiBernese import *
 from bernese.core.rinex import *
+from bernese.core.utils import *
 from threading import Thread
 from bernese.core.log import log
 import sys
@@ -19,18 +20,34 @@ def index(request):
 
 		if form.is_valid():
 
+			# Define o nome (id) do processamento
+			bpeName = setBernID()
+
+			# print(request.FILES)
 			f = request.FILES['rinexFile']
+
+			if 'blqFile' in request.FILES:
+				b = request.FILES['blqFile']
+			else:
+				b = False
 
 			(f_isOK,erroMsg) = isRinex(f)
 
-			if f_isOK: (f_isOK,erroMsg,header,pathTempFile) = readRinexObs(f)
+			if f_isOK: (f_isOK,erroMsg,header,pathTempFile) = readRinexObs(f,bpeName)
+
+			if f_isOK and b:
+				(f_isOK,erroMsg,pathBlqTempFile) = saveBlq(b,bpeName)
 
 			if f_isOK:
 
-				bpeName = 'bern' + '{:03d}'.format(datetime.now().timetuple().tm_yday)
-				bpeName += '_' +  '{:02d}'.format(datetime.now().timetuple().tm_hour)
-				bpeName += '{:02d}'.format(datetime.now().timetuple().tm_min)
-				bpeName += '{:02d}'.format(datetime.now().timetuple().tm_sec)
+				# if form.cleaned_data['blqCheck']:
+				# 	header['BLQ'] = 'SYSTEM'
+				# else:
+				# 	header['BLQ'] = 'USER'
+				#
+				# print(form.cleaned_data['blqCheck'])
+				# print(type(form.cleaned_data['blqCheck'])
+				# print(header['BLQ'])
 
 				header['ID'] = 1
 				header['ID2'] = header['MARKER NAME'][:2]
@@ -39,11 +56,13 @@ def index(request):
 
 				headers = [header]
 				pathTempFiles = [pathTempFile]
+				pathBlqTempFiles = []
+				if b: pathBlqTempFiles = [pathBlqTempFile]
 
 				try:
 
 					# Nova instancia da API para o Bernese
-					pppBPE = ApiBernese(bpeName,headers,form.cleaned_data['email'],pathTempFiles)
+					pppBPE = ApiBernese(bpeName,headers,form.cleaned_data['email'],pathTempFiles,pathBlqTempFiles)
 
 					# Abrindo novo processo para a solicitação
 					Thread(name=bpeName,target=pppBPE.runBPE,kwargs={'prcType': 'PPP'}).start()

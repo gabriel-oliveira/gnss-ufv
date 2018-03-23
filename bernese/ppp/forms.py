@@ -19,6 +19,20 @@ class simplePPP(forms.Form):
 			)
 		)
 
+	# true_false_choices = (
+	# 	(True, 'Sim',),
+	# 	(False, 'Não',),
+	# 	)
+	#
+	# blqCheck = forms.BooleanField(
+	# 	label = 'Estação da RBMC',
+	# 	required = False,
+	# 	initial = False,
+	# 	widget = forms.RadioSelect(
+	# 		choices = true_false_choices
+	# 		)
+	# 	)
+
 	plate = forms.ChoiceField(
 		label = 'Selecione a placa tectônica da estação:',
 		choices = (
@@ -44,3 +58,14 @@ class simplePPP(forms.Form):
 			attrs={'class': 'form-control'},
 			)
 	)
+
+
+	blqFile = forms.FileField(
+		label = 'Arquivo BLQ (Ocean Tide Loading)',
+		max_length = 250,
+		required = False,
+		widget = forms.ClearableFileInput(
+			attrs={'class': 'form-control'},
+
+			)
+		)

@@ -47,7 +47,7 @@ def setRnxName(header):
 
 #-------------------------------------------------------------------------------
 
-def readRinexObs(rnxFile):
+def readRinexObs(rnxFile,bpeName):
 
     try:
         header={}
@@ -77,6 +77,7 @@ def readRinexObs(rnxFile):
                                 header['ANT # / TYPE'][20:40]]
         header['MARKER NAME'] = header['MARKER NAME'].strip().upper()
         header['MARKER NUMBER'] = header['MARKER NUMBER'].strip().upper()
+        header['RAW_NAME'] = rnxFile.name
 
         #observation types
         # v2.xx
@@ -102,7 +103,7 @@ def readRinexObs(rnxFile):
             # fim com erro de readRinexObs()
 
         # Salva arquivo em pasta de arquivos temporários
-        rnxTempName = path.join(RINEX_UPLOAD_TEMP_DIR, rnxFile.name)
+        rnxTempName = path.join(RINEX_UPLOAD_TEMP_DIR, (bpeName + '.OBS'))
         with open(rnxTempName,'wb') as destination:
         	for chunk in rnxFile.chunks(): destination.write(chunk)
 

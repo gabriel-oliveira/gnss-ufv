@@ -3,6 +3,7 @@ from .forms import simpleRelative
 from datetime import datetime, date
 from bernese.core.apiBernese import *
 from bernese.core.rinex import *
+from bernese.core.utils import *
 from threading import Thread
 from bernese.core.log import log
 import sys
@@ -20,8 +21,16 @@ def index(request):
 
 		if form.is_valid():
 
+			# Define o nome (id) do processamento
+			bpeName = setBernID()
+
 			f_Base = request.FILES['rinexBaseFile']
 			f_Rover = request.FILES['rinexRoverFile']
+
+			if 'blqFile' in request.FILES:
+				b = request.FILES['blqFile']
+			else:
+				b = False
 
 			(b_isOK,erroMsg) = isRinex(f_Base)
 			(r_isOK,erroMsg) = isRinex(f_Rover)
@@ -29,7 +38,7 @@ def index(request):
 			if (b_isOK and r_isOK):
 
 				# Lendo Rinex Base
-				(b_isOK,erroMsg,b_header,b_pathTempFile) = readRinexObs(f_Base)
+				(b_isOK,erroMsg,b_header,b_pathTempFile) = readRinexObs(f_Base, bpeName + 'base' )
 
 				if b_isOK:
 
@@ -46,7 +55,7 @@ def index(request):
 						b_header['APPROX POSITION XYZ'][2] = float(request.POST['coord_Z'])
 
 					# Lendo Rinex Rover
-					(r_isOK,erroMsg,r_header,r_pathTempFile) = readRinexObs(f_Rover)
+					(r_isOK,erroMsg,r_header,r_pathTempFile) = readRinexObs(f_Rover, bpeName + 'rover')
 
 					if r_isOK:
 
@@ -84,22 +93,20 @@ def index(request):
 							f_isOK = False
 							erroMsg = 'Arquivos da mesma estação (' + b_header['MARKER NAME'] + ').'
 
+						if f_isOK and b:
+							(f_isOK,erroMsg,pathBlqTempFile) = saveBlq(b,bpeName)
 
 			if f_isOK:
 
-				# Definindo o id da thread para processar a solicitação
-				bpeName = 'bern' + '{:03d}'.format(datetime.now().timetuple().tm_yday)
-				bpeName += '_' +  '{:02d}'.format(datetime.now().timetuple().tm_hour)
-				bpeName += '{:02d}'.format(datetime.now().timetuple().tm_min)
-				bpeName += '{:02d}'.format(datetime.now().timetuple().tm_sec)
-
 				headers = [b_header,r_header]
 				pathTempFiles = [b_pathTempFile,r_pathTempFile]
+				pathBlqTempFiles = []
+				if b: pathBlqTempFiles = [pathBlqTempFile]
 
 				try:
 
 					# Nova instancia da API para o Bernese
-					rltBPE = ApiBernese(bpeName,headers,form.cleaned_data['email'],pathTempFiles)
+					rltBPE = ApiBernese(bpeName,headers,form.cleaned_data['email'],pathTempFiles,pathBlqTempFiles)
 
 					# Abrindo novo processo para a solicitação
 					Thread(name=bpeName,target=rltBPE.runBPE,kwargs={'prcType': 'RLT'}).start()

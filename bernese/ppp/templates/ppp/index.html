@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% block content %}
+{% load static %}
 <div class="container theme-showcase" role="main">
 
   <div class="alert alert-warning alert-dismissible" role="alert">
@@ -40,6 +41,13 @@
     <div class="form-group">
       {{ field.label_tag }}
       {{ field }}
+
+      {% if field.html_name == "blqFile" %}
+      <p class="help-block">Este arquivo pode ser gerado neste <a href="http://holt.oso.chalmers.se/loading/#select" target="_blank">
+      link</a>. Sugere-se o modelo FES2004. Favor utilizar o cabeçalho deste <a href="{% static 'exemplo.txt' %}" target="_blank">
+      link</a>.</p>
+      {% endif %}
+
       {% if field.errors %}
       <ul class="list-group">
         {% for erro in field.errors %}
@@ -49,6 +57,7 @@
       {% endif %}
     </div>
     {% endfor %}
+
     <button type="submit" class="btn btn-default btn-lg" onclick="
       if(document.getElementById('pppForm').checkValidity()){
         document.getElementById('uploadAlert').style.display='block';
