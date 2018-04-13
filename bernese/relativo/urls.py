@@ -1,6 +1,9 @@
-from django.conf.urls import url
+# from django.conf.urls import url
+from django.urls import path
 from bernese.relativo.views import index
 
+app_name='relativo'
+
 urlpatterns = [
-    url(r'^$', index, name='index'),
+    path('', index, name='index'),
 ]

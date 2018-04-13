@@ -1,10 +1,13 @@
-from django.conf.urls import url
+#from django.conf.urls import url
+from django.urls import path
 from bernese.core.views import index, about, contact, monitor, tools
 
+app_name = 'core'
+
 urlpatterns = [
-    url(r'^$', index, name='index'),
-    url(r'^ferramentas/$', tools, name='tools'),
-    url(r'^sobre/$', about, name='about'),
-    url(r'^contato/$', contact, name='contact'),
-    url(r'^monitoramento/$', monitor, name='monitor'),
+    path('', index, name='index'),
+    path('ferramentas/', tools, name='tools'),
+    path('sobre/', about, name='about'),
+    path('contato/', contact, name='contact'),
+    path('monitoramento/', monitor, name='monitor'),
 ]
