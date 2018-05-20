@@ -27,12 +27,13 @@
           Arquivo submetido com sucesso!<br>O resultado do processamento será encaminhado por email.
         </div>
       {% endif %}
-      {% if isErro %}
+      {% if isErro or form.non_field_errors %}
         <div class="alert alert-danger alert-dismissible" role="alert">
           <button type="button" class="close" data-dismiss="alert" aria-label="Close">
             <span aria-hidden="true">&times;</span>
           </button>
           {{ erroMsg }}
+          {{ form.non_field_errors }}
         </div>
       {% endif %}
 
@@ -43,13 +44,13 @@
 
         <div class="form-group">
 
-          {% if field.html_name == "choice_coord_from" %}
+          {% if field.html_name == "coord_ref_type" %}
 
-            <label for="id_choice_coord_from_0">Coordenadas de referência (BASE):</label>
-            <ul id="id_choice_coord_from" class="list-group">
+            <label for="id_coord_ref_type_0">Coordenadas de referência (BASE):</label>
+            <ul id="id_coord_ref_type" class="list-group">
               <li class="list-group-item">
-                <label for="id_choice_coord_from_0">
-                <input class="list-group" type="radio" name="choice_coord_from" value="COORD_FROM_RINEX" required id="id_choice_coord_from_0"
+                <label for="id_coord_ref_type_0">
+                <input class="list-group" type="radio" name="coord_ref_type" value="header_rinex" required id="id_coord_ref_type_0"
                 onclick="
                   document.getElementById('id_coord_X').disabled=true;
                   document.getElementById('id_coord_Y').disabled=true;
@@ -63,8 +64,8 @@
               </label>
 
               </li>
-              <li class="list-group-item"><label for="id_choice_coord_from_1">
-                <input type="radio" name="choice_coord_from" value="COORD_USER_DEFINED" required id="id_choice_coord_from_1"
+              <li class="list-group-item"><label for="id_coord_ref_type_1">
+                <input type="radio" name="coord_ref_type" value="user_set" required id="id_coord_ref_type_1"
                 onclick="
                 document.getElementById('id_coord_X').disabled=false;
                 document.getElementById('id_coord_Y').disabled=false;
@@ -79,13 +80,13 @@
               </li>
             </ul>
 
-          {% elif field.html_name in '["coord_X", "coord_Y", "coord_Z"]' %}
+           {% elif field.html_name in '["coord_X", "coord_Y", "coord_Z"]' %}
           <!-- campos criados manualmente no final do looping -->
           {% else %}
             {{ field.label_tag }}
             {{ field }}
 
-            {% if field.html_name == "blqFile" %}
+            {% if field.html_name == "blq_file" %}
             <p class="help-block">Este arquivo pode ser gerado neste <a href="http://holt.oso.chalmers.se/loading/#select" target="_blank">
             link</a>. Sugere-se o modelo FES2004. Favor utilizar o cabeçalho deste <a href="{% static 'exemplo.txt' %}" target="_blank">
             link</a>.</p>

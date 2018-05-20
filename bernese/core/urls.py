@@ -1,6 +1,6 @@
 #from django.conf.urls import url
 from django.urls import path
-from bernese.core.views import index, about, contact, monitor, tools
+from bernese.core.views import index, about, contact, monitor, tools, check
 
 app_name = 'core'
 
@@ -10,4 +10,5 @@ urlpatterns = [
     path('sobre/', about, name='about'),
     path('contato/', contact, name='contact'),
     path('monitoramento/', monitor, name='monitor'),
+    path('check/',check, name='check')
 ]

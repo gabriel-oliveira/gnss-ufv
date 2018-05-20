@@ -1,71 +1,54 @@
 from django import forms
+from django.forms import ModelForm
+from bernese.ppp.models import Details_PPP
+from bernese.core.utils import is_blq
+from bernese.core.rinex import isRinex, readRinexObs
 
-class simplePPP(forms.Form):
+class simplePPP(ModelForm):
 
-	email = forms.EmailField(
-		label = 'Email',
-		max_length = 250,
-		widget = forms.EmailInput(
-			attrs={'class': 'form-control'}
-			)
-		)
+	def clean_rinex_file(self):
+		rfile = self.cleaned_data['rinex_file']
+		(r_isOK,erroMsg) = isRinex(rfile)
+		if r_isOK:
+			return rfile
+		else:
+			raise forms.ValidationError(erroMsg)
 
-	rinexFile = forms.FileField(
-		label = 'Arquivo Rinex',
-		max_length = 250,
-		widget = forms.ClearableFileInput(
-			attrs={'class': 'form-control'},
+	def clean_blq_file(self):
+		bfile = self.cleaned_data['blq_file']
+		if bfile:
+			(b_ok,erroMsg) = is_blq(bfile)
+			if b_ok:
+				return bfile
+			else:
+				raise forms.ValidationError(erroMsg)
 
-			)
-		)
+	def clean(self):
+		cleaned_data = super().clean()
 
-	# true_false_choices = (
-	# 	(True, 'Sim',),
-	# 	(False, 'Não',),
-	# 	)
-	#
-	# blqCheck = forms.BooleanField(
-	# 	label = 'Estação da RBMC',
-	# 	required = False,
-	# 	initial = False,
-	# 	widget = forms.RadioSelect(
-	# 		choices = true_false_choices
-	# 		)
-	# 	)
+		f = cleaned_data.get('rinex_file')
+		if f:
+			(f_isOK, erroMsg, header) = readRinexObs(f)
+		else:
+			f_isOK = False
+			erroMsg = 'Arquivo Rinex invalido.'
 
-	plate = forms.ChoiceField(
-		label = 'Selecione a placa tectônica da estação:',
-		choices = (
-			('SOAM', 'SOAM - Sul-Americana',),
-			('AFRC', 'AFRC - Africa'),
-			('ANTA', 'ANTA - Antarctica'),
-			('ARAB', 'ARAB - Arabia'),
-			('AUST', 'AUST - Australia'),
-			('CARB', 'CARB - Caribbean'),
-			('COCO', 'COCO - Cocos (north of NAZC, south of NOAM, east of CARB)'),
-			('EURA', 'EURA - Eurasia'),
-			('INDI', 'INDI - India'),
-			('JUFU', 'JUFU - Juan de Fuca (in between northern NOAM and PCFC)'),
-			('NAZC', 'NAZC - Nazca (west of SOAM, east of PCFC)'),
-			('NOAM', 'NOAM - North America'),
-			('SOAM', 'SOAM - South America'),
-			('PCFC', 'PCFC - Pacific'),
-			('PHIL', 'PHIL - Philippine'),
-			),
-		initial = 'SOAM',
-		required = True,
-		widget=forms.Select(
-			attrs={'class': 'form-control'},
-			)
-	)
+		if not f_isOK:
+			 raise forms.ValidationError(erroMsg)
 
 
-	blqFile = forms.FileField(
-		label = 'Arquivo BLQ (Ocean Tide Loading)',
-		max_length = 250,
-		required = False,
-		widget = forms.ClearableFileInput(
-			attrs={'class': 'form-control'},
-
-			)
-		)
+	class Meta:
+		model = Details_PPP
+		fields = ('email', 'rinex_file', 'tectonic_plate', 'blq_file')
+		widgets = {
+			'email': forms.EmailInput(attrs={'class': 'form-control'}),
+			'rinex_file': forms.ClearableFileInput(attrs={'class': 'form-control'}),
+			'tectonic_plate': forms.Select(attrs={'class': 'form-control'}),
+			'blq_file': forms.ClearableFileInput(attrs={'class': 'form-control'}),
+		}
+		labels = {
+			'email' : 'E-mail',
+			'rinex_file' : 'Arquivo Rinex de Observação',
+			'tectonic_plate' : 'Selecione a placa tectônica da estação',
+			'blq_file' : 'Arquivo BLQ (Ocean Tide Loading)',
+		}

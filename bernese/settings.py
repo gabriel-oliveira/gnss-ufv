@@ -15,15 +15,6 @@ import os
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-# DATAPOOL_DIR = 'E:\\Sistema\\GPSDATA\\DATAPOOL\\'
-# SAVEDISK_DIR = 'E:\\Sistema\\GPSDATA\\SAVEDISK\\'
-DATAPOOL_DIR = os.path.join(BASE_DIR,'DATAPOOL')
-SAVEDISK_DIR = os.path.join(BASE_DIR,'SAVEDISK')
-CAMPAIGN_DIR = os.path.join(BASE_DIR,'CAMPAIGN52','SYSTEM')
-RESULTS_DIR = os.path.join(BASE_DIR,'RESULTADOS')
-
-RINEX_UPLOAD_TEMP_DIR = os.path.join(BASE_DIR,'RINEX_UPLOAD_TEMP_DIR')
-
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.11/howto/deployment/checklist/
 
@@ -32,8 +23,24 @@ SECRET_KEY = os.environ['DJANGO_KEY']
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
+TEST_SERVER = True
 
 ALLOWED_HOSTS = ['*']
+
+if TEST_SERVER:
+    DATAPOOL_DIR = os.path.join(BASE_DIR,'DATAPOOL')
+    SAVEDISK_DIR = os.path.join(BASE_DIR,'SAVEDISK')
+    CAMPAIGN_DIR = os.path.join(BASE_DIR,'CAMPAIGN52','SYSTEM')
+else:
+    DATAPOOL_DIR = 'E:\\Sistema\\GPSDATA\\DATAPOOL\\'
+    SAVEDISK_DIR = 'E:\\Sistema\\GPSDATA\\SAVEDISK\\'
+    CAMPAIGN_DIR = 'E:\\Sistema\\GPSDATA\\CAMPAIGN52\\SYSTEM'
+
+RESULTS_DIR = os.path.join(BASE_DIR,'RESULTADOS')
+RINEX_UPLOAD_TEMP_DIR = os.path.join(BASE_DIR,'RINEX_UPLOAD_TEMP_DIR')
+
+MEDIA_ROOT = RINEX_UPLOAD_TEMP_DIR
+MEDIA_URL = '/media/'
 
 
 # Application definition
@@ -85,30 +92,36 @@ WSGI_APPLICATION = 'bernese.wsgi.application'
 # https://docs.djangoproject.com/en/1.11/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
-    }
+     'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'gnss_ufv',
+        'USER': 'sistema',
+        'PASSWORD': os.environ['SYSTEM_MAIL_PASS'],
+        'HOST': '127.0.0.1',
+        'PORT': '5432',
+        }
 }
 
 
 # Password validation
 # https://docs.djangoproject.com/en/1.11/ref/settings/#auth-password-validators
+if TEST_SERVER: AUTH_PASSWORD_VALIDATORS = []
+else:
+        AUTH_PASSWORD_VALIDATORS = [
+        {
+            'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+        },
+        {
+            'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        },
+        {
+            'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+        },
+        {
+            'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+        },
+    ]
 
-AUTH_PASSWORD_VALIDATORS = [
-    {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
-    },
-]
 
 
 # Internationalization
@@ -132,8 +145,8 @@ STATIC_URL = '/static/'
 STATIC_ROOT = os.path.abspath(os.path.join(BASE_DIR, 'bernese', 'static'))
 
 #E-mail
-# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+if TEST_SERVER: EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+else: EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 DEFAULT_FROM_MAIL = 'GNSS-UFV <gnss.ufv@gmail.com>'
 EMAIL_USE_TLS = True
 EMAIL_HOST = 'smtp.gmail.com'
@@ -142,6 +155,9 @@ EMAIL_HOST_PASSWORD = os.environ['SYSTEM_MAIL_PASS']
 EMAIL_PORT = 587
 CONTACT_EMAIL = 'gnss.ufv@gmail.com'
 
-ADMINS = [('Gabriel','gabriel.diniz@ufv.br')]
+ADMINS = [('Gabriel','gabriel.diniz@ufv.br'),('GNSS-UFV', 'gnss.ufv@gmail.com')]
 
 SERVER_EMAIL = 'gnss.ufv@gmail.com'
+
+# Tempo limite aguardando um processamento. Em minutos.
+MAX_PROCESSING_TIME = 10

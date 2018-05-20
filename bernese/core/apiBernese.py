@@ -8,30 +8,81 @@ from os import path, remove
 from subprocess import Popen, run, PIPE, DEVNULL
 from bernese.core.berneseFilesTemplate import *
 from bernese.core.rinex import *
-from bernese.settings import DATAPOOL_DIR, SAVEDISK_DIR, CAMPAIGN_DIR, RESULTS_DIR, DEBUG
-from bernese.core.mail import send_result_email
+from bernese.settings import DATAPOOL_DIR, SAVEDISK_DIR, CAMPAIGN_DIR, RESULTS_DIR, DEBUG, TEST_SERVER
+# from bernese.core.mail import send_result_email
 from bernese.core.log import log
 from zipfile import ZipFile, ZIP_DEFLATED
 
+#-------------------------------------------------------------------------------
+# TODO: transformar logs em raises???
+# TODO: definir função a ser execultada pós processamento (send mail, proc.finished_at)
+#       fora da Api passa-la por parametro com seus parametros efkwargs
+#-------------------------------------------------------------------------------
+
 class ApiBernese:
-
-    # header = {
-    #     'COMMENT': None
-    #     # TODO acrescentar campos possíveis
-    # }
-
-    headers = []
-
 
 #-------------------------------------------------------------------------------
 
-    def __init__(self, bpeName, rheaders, remail, pathTempFiles,pathBlqTempFiles):
+    #def __init__(self, bpeName, rheaders, remail, pathTempFiles,pathBlqTempFiles):
+    def __init__(self, **kwargs):
 
-        self.headers = rheaders
-        self.email = remail
-        self.bpeName = bpeName
-        self.pathRnxTempFiles = pathTempFiles
-        self.pathBlqTempFiles = pathBlqTempFiles
+        self.setBpeID()
+        if 'proc_id' in kwargs:
+            self.proc_id = kwargs['proc_id']
+        else:
+            self.proc_id = self.bpeName
+        # self.email = kwargs['email']
+        self.pathBlqTempFiles = [kwargs['blq_file']]
+        self.prcType = kwargs['proc_method']
+
+        # TODO: rever a eficiencia disto
+        # if 'endFunction' in kwargs:
+
+        end_f = kwargs['endFunction']
+
+        def newend_f(**kwargs):
+            try:
+                end_f(**kwargs)
+            except Exception as e:
+                log('Erro ao rodar endFunction')
+                erroMsg = sys.exc_info()
+                log(str(erroMsg[0]))
+                log(str(erroMsg[1]))
+
+        self.endFunction = newend_f
+
+        if kwargs['proc_method'] == 'ppp':
+
+            self.pathRnxTempFiles = [kwargs['rinex_file']]
+
+            header = self.getHeader(kwargs['rinex_file'])
+            header['ID'] = 1
+            header['ID2'] = header['MARKER NAME'][:2]
+            header['FLAG'] = ''
+            header['PLATE'] = kwargs['tectonic_plate']
+
+            self.headers = [header]
+
+        if kwargs['proc_method'] == 'relativo':
+
+            self.pathRnxTempFiles = [
+                                    kwargs['rinex_base_file'],
+                                    kwargs['rinex_rover_file']
+                                    ]
+
+            b_header = self.getHeader(kwargs['rinex_base_file'])
+            b_header['ID'] = 1
+            b_header['FLAG'] = 'B'
+            b_header['PLATE'] = kwargs['tectonic_plate_base']
+            b_header['APPROX POSITION XYZ'] = kwargs['coord_ref']
+
+            r_header = self.getHeader(kwargs['rinex_rover_file'])
+            r_header['ID'] = 2
+            r_header['FLAG'] = ''
+            r_header['PLATE'] = kwargs['tectonic_plate_rover']
+
+            self.headers = [b_header, r_header]
+
 
         hDate = self.headers[0]['TIME OF FIRST OBS'].split()
         ano = int(hDate[0])
@@ -42,6 +93,38 @@ class ApiBernese:
 
 #-------------------------------------------------------------------------------
 
+    def setBpeID(self):
+
+        instante = datetime.now()
+
+        self.bpeName = 'bern' + '{:03d}'.format(instante.timetuple().tm_yday)
+        self.bpeName += '_' +  '{:02d}'.format(instante.hour)
+        self.bpeName += '{:02d}'.format(instante.minute)
+        self.bpeName += '{:02d}'.format(instante.second)
+        self.bpeName += '{}'.format(instante.microsecond)
+
+
+
+#-------------------------------------------------------------------------------
+
+    def getHeader(self, rnxFile):
+        '''
+            rnxFile -> caminho completo do arquivo rinex
+            header -> dictionary com os campos do cabeçalho
+        '''
+        with open(rnxFile, 'rb') as r_file:
+            (r_isOK, msgErro, header) = readRinexObs(r_file)
+
+        if not r_isOK:
+            erro = 'Em ApiBernese(): Erro ao ler os dados do arquivo: '
+            erro += str(kwargs['rinex_file'])
+            erro += msgErro
+            raise Exception(erro)
+
+        return header
+
+#-------------------------------------------------------------------------------
+
     def haveEphem(rnxDate):
         # TODO verificar efemerides
         return True
@@ -49,14 +132,16 @@ class ApiBernese:
 
 #-------------------------------------------------------------------------------
 
-    def saveRinex(self):
+    def getRinex(self):
     # Salva o arquivo no servidor (DATAPOOL\RINEX)
 
         try:
 
             i = 0
             for rnxFile in self.pathRnxTempFiles:
-                with open(rnxFile,'r') as tmpFile, open(path.join(DATAPOOL_DIR,'RINEX',setRnxName(self.headers[i])),'w') as destination:
+                with open(rnxFile,'r') as tmpFile, open(path.join( DATAPOOL_DIR,
+                                            'RINEX', setRnxName(self.headers[i])
+                                                         ), 'w') as destination:
                     aux = tmpFile.read()
                     destination.write(aux)
                 i += 1
@@ -75,7 +160,7 @@ class ApiBernese:
 
 #-------------------------------------------------------------------------------
 
-    def copyBlq(self):
+    def getBlq(self):
     # Salva o arquivo BLQ no servidor (DATAPOOL\REF52)
 
         try:
@@ -85,7 +170,9 @@ class ApiBernese:
 
                 if blqFile:
 
-                    with open(blqFile,'r') as tmpFile, open(path.join(DATAPOOL_DIR,'REF52','SYSTEM.BLQ'),'w') as destination:
+                    with open(blqFile,'r') as tmpFile, open(path.join(
+                         DATAPOOL_DIR,'REF52','SYSTEM.BLQ'),'w') as destination:
+
                         aux = tmpFile.read()
                         destination.write(aux)
 
@@ -108,6 +195,9 @@ class ApiBernese:
     def getEphem(self):
 
     # TODO Se não achar efemérides do CODE pegar do IGS
+
+        if TEST_SERVER:
+            return True
 
         rnxDate = self.dateFile
 
@@ -172,6 +262,35 @@ class ApiBernese:
 
 #-------------------------------------------------------------------------------
 
+    # Define two char ABBreviation
+    def setAbb(self):
+
+        abb_list = []
+
+
+        # Definindo a abreviação do primeiro arquivo
+        self.headers[0]['ID2'] = self.headers[0]['MARKER NAME'][:2]
+        abb_list.append(self.headers[0]['ID2'])
+
+        # Definindo a abreviação dos demais sem repetição
+        for i in range(1,len(self.headers)):
+
+            if self.headers[i]['MARKER NAME'][:2] not in abb_list:
+                self.headers[i]['ID2'] = self.headers[i]['MARKER NAME'][:2] # 1° and 2°
+            elif self.headers[i]['MARKER NAME'][0::2] not in abb_list:
+                self.headers[i]['ID2'] = self.headers[i]['MARKER NAME'][0::2] # 1° and 3°
+            elif self.headers[i]['MARKER NAME'][0::3] not in abb_list:
+                self.headers[i]['ID2'] = self.headers[i]['MARKER NAME'][0::3] # 1° and 4°
+            else:
+                for j in range(0,10):
+                        if (self.headers[i]['MARKER NAME'][0] + str(j)) not in abb_list:
+                            self.headers[i]['ID2'] = (self.headers[i]['MARKER NAME'][0] + str(j))
+                            break
+
+            abb_list.append(self.headers[i]['ID2'])
+
+#-------------------------------------------------------------------------------
+
     def setSTAfiles(self):
 
         campaignName = 'SYSTEM'
@@ -218,6 +337,7 @@ class ApiBernese:
                 f.write(CRD_BODY_TEMPLATE_FILE.format(**header))
 
         # Gerando arquivo ABB (Abreviação do nome da estação)
+        self.setAbb()
         with open(pABBfile,'w') as f:
 
             f.write(ABB_HEADER_TEMPLATE_FILE)
@@ -236,17 +356,20 @@ class ApiBernese:
 
 #-------------------------------------------------------------------------------
 
-    def runBPE(self,prcType):
+    def runBPE(self):
 
-        # Aguarda a vez na fila de processamento do bernese
+        # confere se a fila de bpe threadings está liberada
         self.filaBPE()
 
+        # limpa a pasta da campanha antes de iniciar o processamento
+        self.clearCampaign()
+
         #Salva arquivo rinex em DATAPOOL
-        if not self.saveRinex():
+        if not self.getRinex():
             log('Erro ao salvar o arquivo RINEX no servidor')
 
         #Salva arquivo BLQ em DATAPOOL
-        if not self.copyBlq():
+        if not self.getBlq():
             log('Erro ao salvar o arquivo BLQ no servidor')
 
         # Gera os arquivos do bernese com dados da estação
@@ -254,42 +377,60 @@ class ApiBernese:
 
         # Download das efemérides precisas
         if not self.getEphem():
-            msg = 'Erro no processamento do(s) arquivo(s): '
+
+            if len(self.headers) > 1:
+                msg = 'Erro no processamento dos arquivos: '
+            else:
+                msg = 'Erro no processamento do arquivo: '
+
             for rnxHeader in self.headers:
                 msg += path.basename(rnxHeader['RAW_NAME']) + ' '
+
             msg += '. \n'
             msg += 'Falha no download das efemérides precisas.'
-            send_result_email(self.email,msg)
-            self.clearCampaign()
+
+            log(msg)
+
+            # send_result_email(self.email,msg)
+            # self.clearCampaign()
+            self.endFunction(status = False, id = self.proc_id,
+                            msg = msg, result = None)
+
             return False
 
         try:
 
-            if prcType == 'PPP':
-                arg = 'E:\\Sistema\\runasit.exe "C:\\Perl64\\bin\\perl.exe E:\\Sistema\\pppdemo_pcs.pl '
-            elif prcType == 'RLT':
-                arg = 'E:\\Sistema\\runasit.exe "C:\\Perl64\\bin\\perl.exe E:\\Sistema\\rltufv_pcs.pl '
+            arg = 'E:\\Sistema\\runasit.exe "C:\\Perl64\\bin\\perl.exe '
+
+            if self.prcType == 'ppp':
+                arg += 'E:\\Sistema\\pppdemo_pcs.pl '
+            elif self.prcType == 'relativo':
+                arg += 'E:\\Sistema\\rltufv_pcs.pl '
             else:
                 raise Exception('prcType not defined in ApiBernese')
 
-            arg += str(self.dateFile.year) + ' ' + '{:03d}'.format(date2yearDay(self.dateFile)) + '0"'
+            arg += str(self.dateFile.year) + ' '
+            arg += '{:03d}'.format(date2yearDay(self.dateFile)) + '0"'
 
-            logMsg = 'Rodando BPE: ' + self.bpeName + ' - Arquivo(s): '
+            logMsg = 'Rodando BPE: ' + self.bpeName
+            if len(self.headers) > 1: logMsg += ' - Arquivos: '
+            else:  logMsg += ' - Arquivo: '
             for rnxHeader in self.headers:
                 logMsg += path.basename(rnxHeader['RAW_NAME']) + ' '
             log(logMsg)
 
-            # descomentar para teste fora do servidor
-            # runPCFout = 'Ambiente de teste'
-            # print(arg)
-            # raise Exception('Ambiente de teste')
+            if TEST_SERVER:
+                runPCFout = 'Ambiente de teste'
+                raise Exception(runPCFout)
 
             runPCFout = ['None']
             with Popen(arg,stdout=PIPE,stderr=PIPE,stdin=DEVNULL,cwd='E:\\Sistema') as pRun:
                 runPCFout = pRun.communicate()
                 erroBPE = runPCFout[1]
+            ## Another way
             # pRun = run(arg,stderr=PIPE,cwd='E:\\Sistema')
             # erroBPE = pRun.stderr
+
         except Exception as e:
             log('Erro ao rodar BPE: ' + self.bpeName)
             erroMsg = sys.exc_info()
@@ -303,17 +444,29 @@ class ApiBernese:
 
         if not erroBPE:
 
-            result = self.getResult(prcType)
+            log('BPE: ' + self.bpeName + ' finalizado com sucesso')
+
+            try:
+                 result = self.getResult()
+            except Exception as e:
+                log('Erro pegar o resultado da BPE: ' + self.bpeName)
+                erroMsg = sys.exc_info()
+                log(str(erroMsg[0]))
+                log(str(erroMsg[1]))
 
             if result:
 
-                msg = 'Arquivo(s) '
+                if len(self.headers) > 1: msg = 'Arquivos '
+                else:  msg = 'Arquivo '
                 for rnxHeader in self.headers:
                     msg += path.basename(rnxHeader['RAW_NAME']) + ' '
-                msg += 'processado(s) com sucesso.\n'
+                if len(self.headers) > 1: msg += 'processado com sucesso.\n'
+                else:  msg += 'processados com sucesso.\n'
                 msg += 'Em anexo o resultado do processamento.'
 
-                send_result_email(self.email,msg, result)
+                # send_result_email(self.email,msg, result)
+                self.endFunction(status = True, id = self.proc_id,
+                                msg = msg, result = result)
 
                 self.clearCampaign()
 
@@ -324,50 +477,67 @@ class ApiBernese:
 
 
         log('BPE Erro: ' + repr(runPCFout))
-        msg = 'Erro no processamento do(s) arquivo(s) '
+
+        if len(self.headers) > 1: msg = 'Erro no processamento dos arquivos '
+        else:  msg = 'Erro no processamento do arquivo '
         for rnxHeader in self.headers:
             msg += path.basename(rnxHeader['RAW_NAME']) + ' '
 
-        bernErrorFile = 'E:\\Sistema\\GPSDATA\\CAMPAIGN52\\SYSTEM\\RAW\\BERN_MSG_ERROR.txt' # RUNBPE.pm alterado na linha 881
+        # RUNBPE.pm alterado na linha 881
+        bernErrorFile = path.join(CAMPAIGN_DIR,'RAW','BERN_MSG_ERROR.txt')
 
         if path.isfile(bernErrorFile):
             msg += '. \nDetalhes sobre o erro no arquivo em anexo.'
-            send_result_email(self.email,msg, bernErrorFile)
+            # send_result_email(self.email,msg, bernErrorFile)
+            self.endFunction(status = False, id = self.proc_id,
+                            msg = msg, result = bernErrorFile)
         else:
             msg += '. \nPara detalhes sobre o erro favor entrar em contato.'
-            send_result_email(self.email,msg)
+            # send_result_email(self.email,msg)
+            self.endFunction(status = False, id = self.proc_id,
+                            msg = msg, result = None)
 
-        self.clearCampaign()
+        # self.clearCampaign()
 
         return False
 
 
 #-------------------------------------------------------------------------------
 
-    def getResult(self,prcType):
+    def getResult(self):
 
-        prcFile = prcType + str(self.dateFile.year)[-2:] + '{:03d}'.format(date2yearDay(self.dateFile)) + '0.PRC'
-        prcPathFile = path.join(CAMPAIGN_DIR,'OUT',prcFile)
+        if self.prcType == 'relativo':
 
-        if prcType == 'RLT':
+            prcFile = 'RLT' + str(self.dateFile.year)[-2:]
+            prcFile += '{:03d}'.format(date2yearDay(self.dateFile)) + '0.PRC'
+            prcPathFile = path.join(CAMPAIGN_DIR,'OUT',prcFile)
 
-            snxFile = 'F1_' + str(self.dateFile.year)[-2:] + '{:03d}'.format(date2yearDay(self.dateFile)) + '0.SNX'
+            snxFile = 'F1_' + str(self.dateFile.year)[-2:]
+            snxFile += '{:03d}'.format(date2yearDay(self.dateFile)) + '0.SNX'
             snxFilePath = path.join(CAMPAIGN_DIR,'SOL',snxFile)
 
-            outFile = 'F1_' + str(self.dateFile.year)[-2:] + '{:03d}'.format(date2yearDay(self.dateFile)) + '0.OUT'
+            outFile = 'F1_' + str(self.dateFile.year)[-2:]
+            outFile += '{:03d}'.format(date2yearDay(self.dateFile)) + '0.OUT'
             outFilePath = path.join(CAMPAIGN_DIR,'OUT',outFile)
 
             resultListFiles = [prcPathFile, snxFilePath, outFilePath]
 
-        elif prcType == 'PPP':
+        elif self.prcType == 'ppp':
 
-            snxFile = 'RED' + str(self.dateFile.year)[-2:] + '{:03d}'.format(date2yearDay(self.dateFile)) + '0.SNX'
+            prcFile = 'PPP' + str(self.dateFile.year)[-2:]
+            prcFile += '{:03d}'.format(date2yearDay(self.dateFile)) + '0.PRC'
+            prcPathFile = path.join(CAMPAIGN_DIR,'OUT',prcFile)
+
+            snxFile = 'RED' + str(self.dateFile.year)[-2:]
+            snxFile += '{:03d}'.format(date2yearDay(self.dateFile)) + '0.SNX'
             snxFilePath = path.join(CAMPAIGN_DIR,'SOL',snxFile)
 
-            outFile = 'RED' + str(self.dateFile.year)[-2:] + '{:03d}'.format(date2yearDay(self.dateFile)) + '0.OUT'
+            outFile = 'RED' + str(self.dateFile.year)[-2:]
+            outFile += '{:03d}'.format(date2yearDay(self.dateFile)) + '0.OUT'
             outFilePath = path.join(CAMPAIGN_DIR,'OUT',outFile)
 
-            kinFile = 'KIN' + '{:03d}'.format(date2yearDay(self.dateFile)) + '0' + self.headers[0]['MARKER NAME'][:4] + '.SUM'
+            kinFile = 'KIN' + '{:03d}'.format(date2yearDay(self.dateFile)) + '0'
+            kinFile += self.headers[0]['MARKER NAME'][:4] + '.SUM'
             kinFilePath = path.join(CAMPAIGN_DIR,'OUT',kinFile)
 
             resultListFiles = [prcPathFile, snxFilePath, outFilePath, kinFilePath]
@@ -393,13 +563,16 @@ class ApiBernese:
 
 #-------------------------------------------------------------------------------
 
+    def get_full_result(self):
+        pass
+
+#-------------------------------------------------------------------------------
+
     def clearCampaign(self):
 
-        # TODO: Se o BPE der erro copiar os arquivos para uma pasta temp
-
         # Não roda a função. Evita de limpar os dados para depuração.
-        if DEBUG:
-            return True
+        # if DEBUG:
+        #     return True
 
         log('Clear Campaign Starting')
 
@@ -439,8 +612,10 @@ class ApiBernese:
 
     def filaBPE(self):
 
+        # Verifica todas as threadings ativas
         threads = threading.enumerate()
 
+        # Coloca as threadings que tem o inicio do nome com 'bern' em uma lista
         threadsNames = []
         position = 0
         for th in threads:
@@ -449,6 +624,7 @@ class ApiBernese:
                 threadsNames.append(threadsNames_aux)
             position += 1
 
+        # ordena pelo nome, que esta ligado ao datetime que foi criado
         threadsNames.sort(key=lambda k:k['name'])
 
         # um de cada vez, como a tia gorda ensinou

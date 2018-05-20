@@ -6,6 +6,8 @@ from datetime import datetime
 import threading
 from bernese.core.rinex import date2gpsWeek
 from urllib.request import urlopen
+from bernese.core.process_line import check_line
+
 
 def index(request):
 	# return HttpResponse('Em manutenção!')
@@ -117,3 +119,7 @@ def custom_error_500_view(request):
 	template_name = '500.html'
 	context = {}
 	return render(request, template_name, context)
+
+def check(request):
+	check_line()
+	return index(request)

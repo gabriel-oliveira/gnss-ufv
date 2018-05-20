@@ -16,12 +16,20 @@ def isRinex(rnxFile):
 
     rExt = re.compile('\d{2}O')
 
-    if rExt.match(rnxFile.name[-3:].upper()) or rnxFile.name.upper().endswith('.OBS'):
-        return True, erroMsg
-    else:
-        erroMsg = ('Extensão invalida!!! Favor inserir um arquivo Rinex de Observação' +
-                    '(.OBS ou .yyO, onde yy = Ano)')
+    if not ( rExt.match(rnxFile.name[-3:].upper()) or rnxFile.name.upper().endswith('.OBS') ):
+        erroMsg = ('Extensão invalida! Favor inserir um arquivo Rinex de Observação' +
+                    ' (.OBS ou .yyO, onde yy = Ano)')
         return False, erroMsg
+    else:
+        try:
+            f = rnxFile.read(80).decode()
+            if f[60:80] == 'RINEX VERSION / TYPE':
+                return True, erroMsg
+            else:
+                return False, 'Erro ao conferir a primeira linha do arquivo: ' + rnxFile.name
+        except:
+            return False, 'Erro ao ler o arquivo: ' + rnxFile.name
+
 
 
 #-------------------------------------------------------------------------------
@@ -47,14 +55,29 @@ def setRnxName(header):
 
 #-------------------------------------------------------------------------------
 
-def readRinexObs(rnxFile,bpeName):
+# TODO: enviar msg pro log no lugar de retornar na função
+
+def readRinexObs(rnxFile):
+    '''
+        rnxFile > deve ser do tipo file binary, ou seja, o arquivo de ser aberto
+                  no modo binário antes da função ser chamada. PS: arquivo do form
+                  ja vem aberto.
+
+        return > boolean, string, dictionary
+
+                 bolean - sucesso na Leitura
+                 string - mensagem de erroMsg
+                 dictionary - cabeçalho do arquivo rinex
+    '''
 
     try:
         header={}
         erroMsg=''
-        rnxTempName=''
+        # rnxTempName=''
+
         # Capture header info
         for i,bl in enumerate(rnxFile):
+
             l = bl.decode()
             if "END OF HEADER" in l:
                 i+=1 # skip to data
@@ -67,16 +90,29 @@ def readRinexObs(rnxFile,bpeName):
                 #concatenate to the existing string
 
         verRinex = float(header['RINEX VERSION / TYPE'][:9])  # %9.2f
+
         # list with x,y,z cartesian
-        header['APPROX POSITION XYZ'] = [float(i) for i in header['APPROX POSITION XYZ'].split()]
-        header['ANTENNA DELTA H/E/N'] = [float(i) for i in header['ANTENNA: DELTA H/E/N'].split()]
+        if 'APPROX POSITION XYZ' in header and len(header['APPROX POSITION XYZ'].split()) == 3:
+            header['APPROX POSITION XYZ'] = [
+                float(i) for i in header['APPROX POSITION XYZ'].split()
+                ]
+        else:
+            raise Exception('Erro em APPROX POSITION XYZ')
+
+        if 'ANTENNA: DELTA H/E/N' in header and len(header['ANTENNA: DELTA H/E/N'].split()) == 3:
+            header['ANTENNA DELTA H/E/N'] = [
+                float(i) for i in header['ANTENNA: DELTA H/E/N'].split()
+                ]
+        else:
+            raise Exception('Erro em ANTENNA: DELTA H/E/N')
+
         header['REC # / TYPE / VERS'] = [header['REC # / TYPE / VERS'][:19],
                                         header['REC # / TYPE / VERS'][20:39],
                                         header['REC # / TYPE / VERS'][40:]]
         header['ANT # / TYPE'] = [header['ANT # / TYPE'][:19],
                                 header['ANT # / TYPE'][20:40]]
-        header['MARKER NAME'] = header['MARKER NAME'].strip().upper()
-        header['MARKER NUMBER'] = header['MARKER NUMBER'].strip().upper()
+        header['MARKER NAME'] = header['MARKER NAME'][:4].strip().upper()
+        header['MARKER NUMBER'] = header['MARKER NUMBER'][:9].strip().upper()
         header['RAW_NAME'] = rnxFile.name
 
         #observation types
@@ -99,30 +135,33 @@ def readRinexObs(rnxFile,bpeName):
         #     rinex_dir = 'RINEX3'
         else:
             erroMsg = 'Sem suporte para a versão Rinex ' + str(verRinex)
-            return False, erroMsg, header, rnxTempName
+            return False, erroMsg, header
             # fim com erro de readRinexObs()
 
-        # Salva arquivo em pasta de arquivos temporários
-        rnxTempName = path.join(RINEX_UPLOAD_TEMP_DIR, (bpeName + '.OBS'))
-        with open(rnxTempName,'wb') as destination:
-        	for chunk in rnxFile.chunks(): destination.write(chunk)
+        # DEPRECTED upload do arquivo sendo feito pelo django
+        # # Salva arquivo em pasta de arquivos temporários
+        # rnxTempName = path.join(RINEX_UPLOAD_TEMP_DIR, (bpeName + '.OBS'))
+        # with open(rnxTempName,'wb') as destination:
+        # 	for chunk in rnxFile.chunks(): destination.write(chunk)
 
 
-        return True, erroMsg, header, rnxTempName
-    # fim com sucesso de readRinexObs()
+        return True, erroMsg, header
+        # fim com sucesso de readRinexObs()
 
     except Exception as e:
 
-        log('Erro ao ler arquivo Rinex')
-        erroMsg = sys.exc_info()
-        log(str(erroMsg[0]))
-        log(str(erroMsg[1]))
+        erroMsg = 'Erro ao ler arquivo Rinex. ' + rnxFile.name + '. '
+        erroMsg += str(e)
+
+        log(erroMsg)
+        sysErroMsg = sys.exc_info()
+        log(str(sysErroMsg[0]))
+        log(str(sysErroMsg[1]))
         # traceback.print_tb(erroMsg[2])
 
-        erroMsg = 'Erro ao ler arquivo Rinex.'
 
-        return False, erroMsg, header, rnxTempName
-    # fim com erro de readRinexObs()
+        return False, erroMsg, header
+        # fim com erro de readRinexObs()
 
 
 #-------------------------------------------------------------------------------

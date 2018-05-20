@@ -16,17 +16,19 @@ Including another URLconf
 # from django.conf.urls import url, include
 from django.contrib import admin
 from django.urls import path, include
+from django.conf import settings
+from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('bernese.core.urls', namespace='core')),
     path('ppp/', include('bernese.ppp.urls', namespace='ppp')),
     path('relativo/', include('bernese.relativo.urls', namespace='relativo')),
-]
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 handler500 = 'bernese.core.views.custom_error_500_view'
 
-# DEPRECTADED, urls Django 1.11
+# DEPRECTED, urls Django 1.11
 # urlpatterns = [
 #     url(r'^admin/', admin.site.urls),
 #     url(r'^', include('bernese.core.urls', namespace='core')),
