@@ -48,14 +48,18 @@ def check_line():
             dtime = (t_now - proc.started_at)
 
             if dtime.total_seconds()/60 > MAX_PROCESSING_TIME:
-                log('ERROR!!! check_line(): Tempo máximo de processamento excedido')
-                proc.finish_process() ## TODO: chamar finishing_process
 
-                # _run_next()
+                msg = 'Tempo máximo de processamento excedido'
+                log('ERROR!!! check_line(): ' + msg)
+                args = {
+                    'status' : 'Erro',
+                    'id' : proc.id,
+                    'msg' : msg,
+                    'result' : None,
+                    }
+                finishing_process(**args)
 
-            # TODO: matar o processamento atual do bernese
-            #       finalizar processo atual com erro
-            #       chamar um novo processo
+                # TODO: matar o processamento atual do bernese
 
 
 def _run_next():
@@ -122,6 +126,7 @@ def _run_next():
                                     proc_details.coord_ref.Y,
                                     proc_details.coord_ref.Z
                                     ]
+            context['datum'] = proc_details.coord_ref.datum
 
         else:
 

@@ -14,6 +14,7 @@
 #            08-Mar-2018 Alterado para atender a ApiBerneseUFV]
 #                        (Gabriel Diniz de Oliveira)
 #            23-Mar-2018 GD: Verifica se arquivo BLQ foi criado pela API
+#            24-Mai-2018 GD: Add new args
 #
 # ============================================================================
 use strict;
@@ -24,16 +25,26 @@ use bpe_util;
 
 # Check arguments
 # ---------------
-if (@ARGV != 2 or lc($ARGV[0]) eq "-h") {
+if (lc($ARGV[0]) eq "-h") {
   die "\n  Start PPP_DEMO BPE process for a particular session\n".
       "\n  Usage: pppbas_pcs.pl [-h] yyyy ssss\n".
       "\n  yyyy : 4-digit (or 2-digit) year".
       "\n  ssss : 4-character session".
       "\n  -h   : Display this help text\n\n" }
 
+if (scalar(@ARGV)%2) {
+  die("O número de argumentos deve ser um número par. \n [-h] para ajuda")
+}
+
 # Set new user variables
 my %varArgs;
 %varArgs = (V_BLQINF => 'SYSTEM') if (-s 'E:\\Sistema\\GPSDATA\\DATAPOOL\\REF52\\SYSTEM.BLQ');
+
+if (scalar(@ARGV)>2) {
+  for (my $var = 2; $var < scalar(@ARGV); $var+=2) {
+    $varArgs{$ARGV[$var]} = $ARGV[$var+1];
+  }
+}
 	  
 # Create startBPE object
 # ----------------------

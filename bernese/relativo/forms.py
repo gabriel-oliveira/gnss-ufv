@@ -154,14 +154,17 @@ class simpleRelativo(forms.ModelForm):
 		label = 'Sistema de Referência',
 		required = True,
 		choices = (
-			('SIRGAS2000', 'SIRGAS 2000'),
-			('ITRF14', 'ITRF 2014'),
-			('ITRF08', 'ITRF 2008'),
-			('ITRF05', 'ITRF 2005'),
-			('ITRF00', 'ITRF 2000'),
-			('WGS84', 'WGS84'),
+			('ITRF2014', 'ITRF2014'),
+			('ITRF2008', 'ITRF2008'),
+			('ITRF2005', 'ITRF2005'),
+			('ITRF2000', 'ITRF2000'),
+			('IGS14', 'IGS14'),
+			('IGS08', 'IGS08'),
+			('IGb08', 'IGb08'),
+			('IGS05', 'IGS05'),
+			('IGS_00', 'IGS00'),
 		),
-		initial = 'SIRGAS2000',
+		initial = 'IGS14',
 		widget=forms.Select(
 			attrs={'class': 'form-control'},
 			)
@@ -170,7 +173,7 @@ class simpleRelativo(forms.ModelForm):
 	epoch = forms.FloatField(
 		label = 'Época da Coordenada',
 		required = True,
-		initial = 2000.4,
+		initial = 2010.0,
 		widget=forms.NumberInput(
 			attrs={'class': 'form-control'},
 			)

@@ -35,6 +35,8 @@ class ApiBernese:
         self.pathBlqTempFiles = [kwargs['blq_file']]
         self.prcType = kwargs['proc_method']
 
+        if 'datum' in kwargs: self.datum = kwargs['datum']
+
         # TODO: rever a eficiencia disto
         # if 'endFunction' in kwargs:
 
@@ -197,6 +199,7 @@ class ApiBernese:
     # TODO Se não achar efemérides do CODE pegar do IGS
 
         if TEST_SERVER:
+            self.datum = 'IGS14'
             return True
 
         rnxDate = self.dateFile
@@ -219,11 +222,17 @@ class ApiBernese:
 
             # Verifica se existe a efemeride do dia, se não pega a efemeride da semana
             try:
-                testLink = urlopen(sErpFile)
-            except:
+                with urllib.request.urlopen(
+                'ftp://ftp.aiub.unibe.ch/CODE/{:04d}/{}'.format(
+                                                        rnxDate.year,sErpFile)
+                                            ) as f: pass
+            except Exception as e:
+                log(str(e))
+                log('EPH do dia não encontrado, utilizando EPH da semana')
                 sErpFile = sErpWFile
 
-            sfileList = [sClkFile, sEphFile, sIonFile, sErpFile, sP1C1File, sP1P2File]
+            sfileList = [sClkFile, sEphFile, sIonFile, sErpFile, sP1C1File,
+                        sP1P2File]
 
             cod_datapool_dir = path.join(DATAPOOL_DIR,'COD')
             bsw52_datapool_dir = path.join(DATAPOOL_DIR,'BSW52')
@@ -246,6 +255,18 @@ class ApiBernese:
                 # if status.returncode:
                 #     print('Erro ao descompactar o arquivo: ' + target_dir)
                 #     print(status.stderr)
+
+            # leitura do sistema de referencia das ephemerides
+            if not hasattr(self,'datum'):
+                command = '7z x {} -o{} -y'.format(str(path.join(cod_datapool_dir,sEphFile)),cod_datapool_dir)
+                status = run(command,stdout=PIPE,stderr=PIPE)
+                if not status.returncode:
+                    with open(path.join(cod_datapool_dir,sEphFile[:-2]),'r') as f:
+                        self.datum = f.readline().split()[8]
+                        log('Datum lido das efemérides: ' + self.datum)
+                else:
+                    log('Erro ao ler o datum do arquivo .EPH')
+                    self.datum = 'IGS14'
 
             return True
 
@@ -331,7 +352,7 @@ class ApiBernese:
         # Gerando arquivo CRD (coordenadas)
         with open(pCRDfile,'w') as f:
 
-            f.write(CRD_HEADER_TEMPLATE_FILE.format(**{'DATUM': 'IGS14', 'EPOCH': '2010-01-01 00:00:00'}))
+            f.write(CRD_HEADER_TEMPLATE_FILE.format(**{'DATUM': self.datum, 'EPOCH': '2010-01-01 00:00:00'}))
 
             for header in self.headers:
                 f.write(CRD_BODY_TEMPLATE_FILE.format(**header))
@@ -372,9 +393,6 @@ class ApiBernese:
         if not self.getBlq():
             log('Erro ao salvar o arquivo BLQ no servidor')
 
-        # Gera os arquivos do bernese com dados da estação
-        self.setSTAfiles()
-
         # Download das efemérides precisas
         if not self.getEphem():
 
@@ -398,6 +416,9 @@ class ApiBernese:
 
             return False
 
+        # Gera os arquivos do bernese com dados da estação
+        self.setSTAfiles()
+
         try:
 
             arg = 'E:\\Sistema\\runasit.exe "C:\\Perl64\\bin\\perl.exe '
@@ -410,7 +431,20 @@ class ApiBernese:
                 raise Exception('prcType not defined in ApiBernese')
 
             arg += str(self.dateFile.year) + ' '
-            arg += '{:03d}'.format(date2yearDay(self.dateFile)) + '0"'
+            arg += '{:03d}'.format(date2yearDay(self.dateFile)) + '0'
+
+            if not hasattr(self,'datum'):
+                log('Datum não definido')
+                self.datum = 'IGS14'
+
+            arg += ' V_REFINF ' + self.datum
+
+            arg += ' V_PCV I' + self.datum[-2:]
+
+            # TODO: adicionar outros argumentos aqui
+
+            arg += '"'
+
 
             logMsg = 'Rodando BPE: ' + self.bpeName
             if len(self.headers) > 1: logMsg += ' - Arquivos: '
@@ -420,6 +454,7 @@ class ApiBernese:
             log(logMsg)
 
             if TEST_SERVER:
+                print(arg)
                 runPCFout = 'Ambiente de teste'
                 raise Exception(runPCFout)
 
