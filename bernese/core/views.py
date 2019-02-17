@@ -10,6 +10,9 @@ from bernese.settings import LINUX_SERVER, TEST_SERVER
 from bernese.core.process_line import check_line
 import requests
 import os
+from django.core.paginator import Paginator
+from bernese.core.models import Proc_Request
+from django.contrib.auth.decorators import login_required
 
 
 def index(request):
@@ -140,3 +143,12 @@ def check(request):
 		check_line()
 
 	return index(request)
+
+@login_required
+def process_line_view(request):
+    proc_list = Proc_Request.objects.all()
+    paginator = Paginator(proc_list, 100) # Show 100 per page
+
+    page = request.GET.get('page')
+    procs = paginator.get_page(page)
+    return render(request, 'proc_list.html', {'procs': procs, 'isFila' : True})

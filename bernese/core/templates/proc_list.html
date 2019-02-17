@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container theme-showcase" role="main">
+  <h3>Fila de Processamento</h3>
+<table class='table'>
+  <thead>
+    <tr>
+      <td>ID</td><td>Status</td><td>E-mail</td><td>Criando em:</td>
+      <td>Iniciado em:</td><td>Finalizado em:</td>
+    </tr>
+  </thead>
+  <tbody>
+{% for proc in procs %}
+<tr>
+  <td>{{ proc.id }}</td>
+  <td>
+    {% if proc.proc_status == 'waiting' %}
+    Aguardando
+    {% elif proc.proc_status == 'finished' %}
+    Finalizado
+    {% elif proc.proc_status == 'running' %}
+    Processando
+    {% else %}
+    --
+    {% endif %}
+  </td>
+  <td>{{ proc.email }}</td>
+  <td>
+    {% if not proc.created_at %}
+    --
+    {% else %}
+    {{ proc.created_at }}
+    {% endif %}
+  </td>
+  <td>
+    {% if not proc.started_at %}
+    --
+    {% else %}
+    {{ proc.started_at }}
+    {% endif %}
+  </td>
+  <td>
+    {% if not proc.finished_at %}
+    --
+    {% else %}
+    {{ proc.finished_at }}
+    {% endif %}
+  </td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+  <nav aria-label="...">
+    <ul class="pager">
+        {% if procs.has_previous %}
+            <li class="previous">
+              <a style="color:black" href="?page=1">
+                <span aria-hidden="true">&larr;</span> Primeira
+              </a>
+            </li>
+            <li>
+              <a style="color:black" href="?page={{ procs.previous_page_number }}">
+                Anterior
+              </a>
+            </li>
+        {% endif %}
+
+        <span class="current">
+          <li>
+            <a style="color:black">
+              Pagina {{ procs.number }} de {{ procs.paginator.num_pages }}
+            </a>
+          </li>
+        </span>
+
+        {% if procs.has_next %}
+        <li>
+          <a style="color:black" href="?page={{ procs.next_page_number }}">
+            Próxima
+          </a>
+        </li>
+        <li class="next">
+          <a style="color:black" href="?page={{ procs.paginator.num_pages }}">
+            Última <span aria-hidden="true">&rarr;</span>
+          </a>
+        </li>
+        {% endif %}
+    </ul>
+  </nav>
+</div>
+{% endblock %}
