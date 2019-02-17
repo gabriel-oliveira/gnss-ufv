@@ -1,9 +1,11 @@
 from bernese.core.models import *
+from bernese.settings import LINUX_SERVER
 
 class Details_Relativo(Proc_Request):
 
     def save(self, *args, **kwargs):
         self.proc_method = 'relativo'
+        if LINUX_SERVER: self.linux_server = True
         super().save(*args, **kwargs)
 
     COORD_REF_CHOICES = (

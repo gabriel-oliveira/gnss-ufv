@@ -1,6 +1,8 @@
 # gnss-ufv
+http://gnss.ufv.br
+
 Sistema de processamento de dados GNSS da UFV
 
-Sistema com interface web que faz parecer simples os processamentos PPP e Relativo do software Bernese GNSS 5.2.
+Sistema com interface web que faz parecer simples os pposicionamento GNSS pelos métodos PPP e Relativo com o software Bernese GNSS 5.2.
 
-Tecnologias Utilizadas: Django 2.04, Python 3.6, Bootstrap 3.3
+Tecnologias Utilizadas: Django 2.1, Python 3.6, Bootstrap 3.3

@@ -1,12 +1,17 @@
 from django.shortcuts import render
 from .forms import simpleRelativo
 from bernese.core.process_line import check_line
+from bernese.settings import LINUX_SERVER, TEST_SERVER
+from django.contrib.auth.decorators import login_required
+import requests
 # from datetime import datetime, date
 # from bernese.core import apiBernese, rinex, utils
 # from threading import Thread
 # from bernese.core.log import log
 # import sys
 
+
+@login_required
 def index(request):
 	template_name = 'relativo/index.html'
 	context = {}
@@ -21,7 +26,12 @@ def index(request):
 
 			form.save()
 
-			check_line()
+			if TEST_SERVER:
+				pass
+			elif LINUX_SERVER:
+				check = requests.get('http://bernese.dec.ufv.br/check')
+			else:
+				check_line()
 
 			context['isOK'] = True  # retorno ao usuario de solicitação enviada com sucesso
 			form = simpleRelativo() # Novo formulário em branco

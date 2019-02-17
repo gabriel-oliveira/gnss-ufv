@@ -19,7 +19,7 @@ class Proc_Request_Admin(admin.ModelAdmin):
 		}
 
 		return format_html(
-			'<a href="/admin/{method}/details_{method}/{id}/change">{method}_{id}</a>',
+			'<a href="/controle/{method}/details_{method}/{id}/change">{method}_{id}</a>',
 			**context,
 		)
 

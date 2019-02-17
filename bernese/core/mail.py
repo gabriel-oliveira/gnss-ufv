@@ -1,7 +1,7 @@
 from django.template.loader import render_to_string
 from django.template.defaultfilters import striptags
 from django.core.mail import EmailMultiAlternatives, send_mail
-from bernese.settings import DEFAULT_FROM_MAIL, CONTACT_EMAIL, BASE_DIR
+from bernese.settings import DEFAULT_FROM_EMAIL, CONTACT_EMAIL, BASE_DIR
 from datetime import datetime
 from threading import Thread
 from bernese.core.log import log
@@ -9,7 +9,7 @@ import sys
 
 
 def send_mail_template(subject, template_name, context, recipient_list, pathFile,
-	from_email=DEFAULT_FROM_MAIL, fail_silently=False):
+	from_email=DEFAULT_FROM_EMAIL, fail_silently=False):
 
 	message_html = render_to_string(template_name, context)
 

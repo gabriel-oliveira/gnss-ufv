@@ -23,6 +23,7 @@ class Proc_Request(models.Model):
     created_at = models.DateTimeField('Criado em', auto_now_add=True)
     started_at = models.DateTimeField('Iniciado em', null=True, blank=True)
     finished_at = models.DateTimeField('Finalizado em',null=True, blank=True)
+    linux_server = models.BooleanField('Solicitação do servidor linux',default=False)
 
     def __str__(self):
         return 'Process request id (' + str(self.id) + ')'

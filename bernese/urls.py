@@ -15,23 +15,18 @@ Including another URLconf
 """
 # from django.conf.urls import url, include
 from django.contrib import admin
-from django.urls import path, include
+from django.urls import path, include, reverse
 from django.conf import settings
 from django.conf.urls.static import static
+from django.views.generic.base import RedirectView
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
+    path('controle/', admin.site.urls),
     path('', include('bernese.core.urls', namespace='core')),
     path('ppp/', include('bernese.ppp.urls', namespace='ppp')),
     path('relativo/', include('bernese.relativo.urls', namespace='relativo')),
-] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    path('conta/', include('bernese.accounts.urls', namespace='accounts')),
+    path('favicon.ico',RedirectView.as_view(url='/static/favicon.ico', permanent=True))
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT) + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
-handler500 = 'bernese.core.views.custom_error_500_view'
-
-# DEPRECTED, urls Django 1.11
-# urlpatterns = [
-#     url(r'^admin/', admin.site.urls),
-#     url(r'^', include('bernese.core.urls', namespace='core')),
-#     url(r'^ppp/', include('bernese.ppp.urls', namespace='ppp')),
-#     url(r'^relativo/', include('bernese.relativo.urls', namespace='relativo')),
-# ]
+# handler500 = 'bernese.core.views.custom_error_500_view'

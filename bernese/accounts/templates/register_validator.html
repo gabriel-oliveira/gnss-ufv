@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% block content %}
+{% load static %}
+<div class="container theme-showcase" role="main">
+  <div class="jumbotron">
+  {% if isErro or form.non_field_errors %}
+  {% endif %}
+  {% if isSuccess %}
+    <div class="alert alert-info alert-dismissible" role="alert">
+      <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+        <span aria-hidden="true">&times;</span>
+      </button>
+      Cadastro validado com sucesso.
+    </div>
+  {% else %}
+    <div class="alert alert-danger alert-dismissible" role="alert">
+      <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+        <span aria-hidden="true">&times;</span>
+      </button>
+      Erro ao validar o cadastro.
+    </div>
+  {% endif %}
+  </div>
+</div> <!-- /container -->
+
+{% endblock %}

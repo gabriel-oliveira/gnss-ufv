@@ -1,5 +1,10 @@
 from django.shortcuts import render
 from .forms import simplePPP
+import requests
+from bernese.settings import LINUX_SERVER, TEST_SERVER
+from django.shortcuts import redirect
+from django.contrib.auth.decorators import login_required
+import requests
 from bernese.core.process_line import check_line
 # from bernese.core.rinex import *
 # from bernese.core.utils import *
@@ -7,8 +12,9 @@ from bernese.core.process_line import check_line
 # from bernese.core.log import log
 # import sys
 
-
+@login_required
 def index(request):
+
 	template_name = 'ppp/index.html'
 	context = {}
 	erroMsg = 'Erro(s):'
@@ -22,7 +28,12 @@ def index(request):
 
 			form.save()
 
-			check_line()
+			if TEST_SERVER:
+				pass
+			elif LINUX_SERVER:
+				check = requests.get('http://bernese.dec.ufv.br/check')
+			else:
+				check_line()
 
 			context['isOK'] = True  # retorno ao usuario de solicitação enviada com sucesso
 			form = simplePPP()      # Novo formulário em branco

@@ -6,7 +6,10 @@ from datetime import datetime
 import threading
 from bernese.core.rinex import date2gpsWeek
 from urllib.request import urlopen
+from bernese.settings import LINUX_SERVER, TEST_SERVER
 from bernese.core.process_line import check_line
+import requests
+import os
 
 
 def index(request):
@@ -104,22 +107,36 @@ def contact(request):
 	return render(request, template_name, context)
 
 def monitor(request):
-	msg = 'Processamentos ativos: '
-	nproc = 0
-	for tr in threading.enumerate():
-		if tr.name[:4] == 'bern':
+
+	if LINUX_SERVER:
+		check = requests.get('http://bernese.dec.ufv.br/monitoramento')
+		msg = check.text
+	else:
+		msg = 'Processamentos ativos: '
+		nproc = 0
+		for tr in threading.enumerate():
+			# if tr.name[:4] == 'bern':
 			msg += tr.name + ', '
 			nproc += 1
 
-	if not nproc: msg += 'Nenhum'
+		if not nproc: msg += 'Nenhum'
 
 	return HttpResponse(msg)
+
 
 def custom_error_500_view(request):
 	template_name = '500.html'
 	context = {}
 	return render(request, template_name, context)
 
+
 def check(request):
-	check_line()
+
+	if LINUX_SERVER:
+		check = requests.get('http://bernese.dec.ufv.br/check')
+	elif TEST_SERVER:
+		pass
+	else:
+		check_line()
+
 	return index(request)

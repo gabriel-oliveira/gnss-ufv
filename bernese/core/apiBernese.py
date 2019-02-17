@@ -1,6 +1,7 @@
 import sys
 # import traceback
 import urllib.request
+import requests
 from glob import glob
 import threading
 from datetime import datetime
@@ -8,7 +9,10 @@ from os import path, remove
 from subprocess import Popen, run, PIPE, DEVNULL
 from bernese.core.berneseFilesTemplate import *
 from bernese.core.rinex import *
-from bernese.settings import DATAPOOL_DIR, SAVEDISK_DIR, CAMPAIGN_DIR, RESULTS_DIR, DEBUG, TEST_SERVER
+from bernese.settings import (
+DATAPOOL_DIR, SAVEDISK_DIR, CAMPAIGN_DIR, RESULTS_DIR,
+DEBUG, TEST_SERVER, RINEX_UPLOAD_TEMP_DIR,
+)
 # from bernese.core.mail import send_result_email
 from bernese.core.log import log
 from zipfile import ZipFile, ZIP_DEFLATED
@@ -32,7 +36,13 @@ class ApiBernese:
         else:
             self.proc_id = self.bpeName
         # self.email = kwargs['email']
-        self.pathBlqTempFiles = [kwargs['blq_file']]
+        self.linux_server = kwargs['linux_server']
+        if self.linux_server and kwargs['blq_file']:
+            self.getServerFiles(kwargs['blq_file'])
+            self.pathBlqTempFiles = [path.join(RINEX_UPLOAD_TEMP_DIR,'linux_server',kwargs['blq_file'])]
+        else:
+            self.pathBlqTempFiles = [kwargs['blq_file']]
+
         self.prcType = kwargs['proc_method']
 
         if 'datum' in kwargs: self.datum = kwargs['datum']
@@ -55,9 +65,13 @@ class ApiBernese:
 
         if kwargs['proc_method'] == 'ppp':
 
-            self.pathRnxTempFiles = [kwargs['rinex_file']]
+            if self.linux_server:
+                self.getServerFiles(kwargs['rinex_file'])
+                self.pathRnxTempFiles = [path.join(RINEX_UPLOAD_TEMP_DIR,'linux_server',kwargs['rinex_file'])]
+            else:
+                self.pathRnxTempFiles = [kwargs['rinex_file']]
 
-            header = self.getHeader(kwargs['rinex_file'])
+            header = self.getHeader(self.pathRnxTempFiles[0])
             header['ID'] = 1
             header['ID2'] = header['MARKER NAME'][:2]
             header['FLAG'] = ''
@@ -67,18 +81,26 @@ class ApiBernese:
 
         if kwargs['proc_method'] == 'relativo':
 
-            self.pathRnxTempFiles = [
+            if self.linux_server:
+                self.getServerFiles(kwargs['rinex_base_file'])
+                self.getServerFiles(kwargs['rinex_rover_file'])
+                self.pathRnxTempFiles = [
+                path.join(RINEX_UPLOAD_TEMP_DIR,'linux_server',kwargs['rinex_base_file']),
+                path.join(RINEX_UPLOAD_TEMP_DIR,'linux_server',kwargs['rinex_rover_file']),
+                ]
+            else:
+                self.pathRnxTempFiles = [
                                     kwargs['rinex_base_file'],
                                     kwargs['rinex_rover_file']
                                     ]
 
-            b_header = self.getHeader(kwargs['rinex_base_file'])
+            b_header = self.getHeader(self.pathRnxTempFiles[0])
             b_header['ID'] = 1
             b_header['FLAG'] = 'B'
             b_header['PLATE'] = kwargs['tectonic_plate_base']
             b_header['APPROX POSITION XYZ'] = kwargs['coord_ref']
 
-            r_header = self.getHeader(kwargs['rinex_rover_file'])
+            r_header = self.getHeader(self.pathRnxTempFiles[1])
             r_header['ID'] = 2
             r_header['FLAG'] = ''
             r_header['PLATE'] = kwargs['tectonic_plate_rover']
@@ -91,6 +113,14 @@ class ApiBernese:
         mes = int(hDate[1])
         dia = int(hDate[2])
         self.dateFile = datetime(year=ano,month=mes,day=dia)
+
+
+#-------------------------------------------------------------------------------
+
+    def getServerFiles(file):
+        rfile = requests.get('http://gnss.ufv.br/media/' + file)
+        with open(path.join(RINEX_UPLOAD_TEMP_DIR,'linux_server',file),'w') as f:
+            f.write(rfile.text)
 
 
 #-------------------------------------------------------------------------------

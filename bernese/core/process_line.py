@@ -85,13 +85,19 @@ def _run_next():
         'email' : proc_waiting.email,
         'proc_method' : proc_waiting.proc_method,
         'endFunction' : finishing_process,
+        'linux_server' : proc_waiting.linux_server,
         }
 
         proc_details = proc_waiting.get_proc_details()
 
+        if proc_waiting.linux_server:
+            file_root = ''
+        else:
+            file_root = MEDIA_ROOT
+
         if proc_details.blq_file:
             context['blq_file'] = os.path.join(
-                                                MEDIA_ROOT,
+                                                file_root,
                                                 proc_details.blq_file.name
                                                 )
         else:
@@ -100,7 +106,7 @@ def _run_next():
         if proc_waiting.proc_method == 'ppp':
 
             context['rinex_file'] = os.path.join(
-                                        MEDIA_ROOT,proc_details.rinex_file.name)
+                                        file_root,proc_details.rinex_file.name)
 
             context['tectonic_plate'] = proc_details.tectonic_plate
 
@@ -108,12 +114,12 @@ def _run_next():
         elif proc_waiting.proc_method == 'relativo':
 
             context['rinex_base_file'] = os.path.join(
-                                            MEDIA_ROOT,
+                                            file_root,
                                             proc_details.rinex_base_file.name
                                             )
 
             context['rinex_rover_file'] = os.path.join(
-                                            MEDIA_ROOT,
+                                            file_root,
                                             proc_details.rinex_rover_file.name
                                             )
 

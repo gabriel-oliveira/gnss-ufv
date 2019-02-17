@@ -11,8 +11,6 @@
 
     <title>GNSS-UFV</title>
 
-    <link rel="shortcut icon" type="image/png" href="{% static 'logo-gnss-ufv.png' %}"/>
-
     <!-- Custom styles for this template -->
     <link href="{% static 'home/home.css' %}" rel="stylesheet">
     <!-- Bootstrap core CSS -->
@@ -50,28 +48,28 @@
         </div>
         <div id="navbar" class="navbar-collapse collapse">
           <ul class="nav navbar-nav">
-            <li {% if isHome %} class="active"{% endif %}><a href="{% url 'core:index' %}">Início</a></li>
-            <li {% if isPPP %} class="active"{% endif %}><a href="{% url 'ppp:index' %}">PPP</a></li>
-            <li {% if isRelativo %} class="active"{% endif %}><a href="{% url 'relativo:index' %}">Relativo</a></li>
-            <li {% if isTools %} class="active"{% endif %}><a href="{% url 'core:tools' %}">Ferramentas</a></li>
-            <li {% if isAbout %} class="active"{% endif %}><a href="{% url 'core:about' %}">Sobre</a></li>
-            <li {% if isContact %} class="active"{% endif %}><a href="{% url 'core:contact' %}">Contato</a></li>
           </ul>
-            <div align='right'>
-            <ul class="nav navbar-right navbar-nav">
-            {% if user.is_authenticated %}
-            <li><a>Bem-vindo, {{ user.first_name }}!</a>
-            <li><a href="{% url 'accounts:logout' %}">Sair</a>
-            {% else %}
-            <li><a href="{% url 'accounts:login' %}">Entrar</a></li>
-            {% endif %}
-          </ul>
-          </div>
         </div><!--/.nav-collapse -->
       </div>
     </nav>
 
-{% block content %}{% endblock %}
+
+    <div class="container theme-showcase" role="main">
+
+	<div class="alert alert-danger alert-dismissible" role="alert">
+    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+      <span aria-hidden="true">×</span>
+    </button>
+    Em Manutenção! <br> Previsão de retorno 22/03/2018 18:00
+  </div>
+      <!-- Main jumbotron for a primary marketing message or call to action -->
+      <div class="jumbotron">
+        <h1><font color="black">GNSS-UFV</font></h1>
+        <p>Sistema de processamento de dados GNSS da UFV.</p>
+      </div>
+
+    </div> <!-- /container -->
+
 
     <footer class="footer">
       <div class="container">
