@@ -2,7 +2,7 @@
 Processos necessário para gerenciar a fila de processamento do Bernese.
 '''
 
-from bernese.settings import MAX_PROCESSING_TIME, MEDIA_ROOT, DEBUG
+from bernese.settings import MAX_PROCESSING_TIME, MEDIA_ROOT
 from bernese.core.mail import send_result_email
 from bernese.core.models import Proc_Request
 from bernese.core.apiBernese import ApiBernese
@@ -11,6 +11,17 @@ from django.utils import timezone
 import threading
 import sys
 import os
+import socket
+
+
+def is_connected():
+    try:
+        with socket.create_connection(("www.google.com", 80)):
+            pass
+        return True
+    except:
+        return False
+
 
 def check_line():
     '''
@@ -28,7 +39,8 @@ def check_line():
         # Processos aguardando para serem execultados
         procs_waiting = Proc_Request.objects.filter(proc_status='waiting')
 
-        if procs_waiting:
+        # Verifica se o servidor está online
+        if procs_waiting and is_connected():
             _run_next()
 
     else:
@@ -72,8 +84,6 @@ def _run_next():
     proc_waiting = Proc_Request.objects.filter(proc_status='waiting'
                                                     ).order_by('created_at')[0]
 
-    if DEBUG: print('_run_next(): ' + str(proc_waiting))
-
     if not proc_waiting:
 
         log('run_next() execultado sem próximo na fila')
@@ -110,6 +120,7 @@ def _run_next():
 
             context['tectonic_plate'] = proc_details.tectonic_plate
 
+            rinex_files_names = proc_details.rinex_file.name
 
         elif proc_waiting.proc_method == 'relativo':
 
@@ -122,6 +133,7 @@ def _run_next():
                                             file_root,
                                             proc_details.rinex_rover_file.name
                                             )
+            rinex_files_names = proc_details.rinex_base_file.name + ', ' + proc_details.rinex_rover_file.name
 
             context['tectonic_plate_base'] = proc_details.tectonic_plate_base
             context['tectonic_plate_rover'] = proc_details.tectonic_plate_rover
@@ -146,6 +158,9 @@ def _run_next():
 
 
         try:
+            
+            # registra no BD o começo do Processamento
+            proc_waiting.start_process()
 
             # Nova instancia do processamento no bernese
             newBPE = ApiBernese(**context)
@@ -153,17 +168,23 @@ def _run_next():
             # Abre nova thread para a iniciar o processamento
             threading.Thread(name=newBPE.bpeName,target=newBPE.runBPE).start()
 
-            # registra no BD o começo do Processamento
-            proc_waiting.start_process()
-
-            if DEBUG: print(str(proc_waiting) + ' started')
+            log(str(proc_waiting) + ' started')
 
         except Exception as e:
 
-            log('Erro ao solicitar processamento: ' + str(proc_waiting))
+            log('Erro em check_line ao solicitar processamento: ' + str(proc_waiting))
+            log(str(e))
             e_Msg = sys.exc_info()
             log(str(e_Msg[0]))
             log(str(e_Msg[1]))
+
+            # finish process
+            finishing_process(
+                status = False,
+                id = proc_waiting.id,
+                msg = 'Erro no processamento de ' + rinex_files_names,
+                result = None,
+            )
 
 def finishing_process(**kwargs):
 

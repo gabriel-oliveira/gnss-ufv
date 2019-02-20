@@ -15,15 +15,20 @@ def isRinex(rnxFile):
     erroMsg =''
 
     rExt = re.compile('\d{2}O')
+    rExt2 = re.compile('\d{2}D')
 
-    if not ( rExt.match(rnxFile.name[-3:].upper()) or rnxFile.name.upper().endswith('.OBS') ):
+    if not ( rExt.match(rnxFile.name[-3:].upper())
+            or rExt2.match(rnxFile.name[-3:].upper())
+            or rnxFile.name.upper().endswith('.OBS')
+            or rnxFile.name.upper().endswith('.RNX')
+            or rnxFile.name.upper().endswith('.CRX')  ):
         erroMsg = ('Extensão invalida! Favor inserir um arquivo Rinex de Observação' +
-                    ' (.OBS ou .yyO, onde yy = Ano)')
+                    ' (.yyO, yyD, .OBS, .RNX, .CRX)')
         return False, erroMsg
     else:
         try:
             f = rnxFile.read(80).decode()
-            if f[60:80] == 'RINEX VERSION / TYPE':
+            if f[60:80] in ['RINEX VERSION / TYPE', 'CRINEX VERS   / TYPE']:
                 return True, erroMsg
             else:
                 return False, 'Erro ao conferir a primeira linha do arquivo: ' + rnxFile.name
@@ -48,7 +53,13 @@ def setRnxName(header):
     else:
         anoRed = ano - 1900
 
-    rnxName = header['MARKER NAME'][:4].upper() + '{:03d}'.format(diaDoAno) + '0.' + '{:02d}'.format(anoRed) + 'O'
+    # verifica se o arquivo é do tipo hatanaka
+    if 'CRINEX VERS   / TYPE' in header:
+        tipo = 'D'
+    else:
+        tipo = 'O'
+
+    rnxName = header['MARKER NAME'][:4].upper() + '{:03d}'.format(diaDoAno) + '0.' + '{:02d}'.format(anoRed) + tipo
 
     return rnxName
 
@@ -90,6 +101,7 @@ def readRinexObs(rnxFile):
                 #concatenate to the existing string
 
         verRinex = float(header['RINEX VERSION / TYPE'][:9])  # %9.2f
+        header['version'] = floor(verRinex)
 
         # list with x,y,z cartesian
         if 'APPROX POSITION XYZ' in header and len(header['APPROX POSITION XYZ'].split()) == 3:
@@ -115,6 +127,11 @@ def readRinexObs(rnxFile):
         header['MARKER NUMBER'] = header['MARKER NUMBER'][:9].strip().upper()
         header['RAW_NAME'] = rnxFile.name
 
+        if floor(verRinex) not in [2,3]:
+            erroMsg = 'Sem suporte para a versão Rinex ' + str(verRinex)
+            return False, erroMsg, header
+            # fim com erro de readRinexObs()
+
         #observation types
         # v2.xx
         # header['# / TYPES OF OBSERV'] = header['# / TYPES OF OBSERV'].split()
@@ -129,28 +146,13 @@ def readRinexObs(rnxFile):
         # TODO ler intervalo de observação
         # primeira observação é facil mas e a ultima???
 
-        if floor(verRinex) == 2:
-            rinex_dir = 'RINEX'
-        # elif floor(verRinex) == 3:
-        #     rinex_dir = 'RINEX3'
-        else:
-            erroMsg = 'Sem suporte para a versão Rinex ' + str(verRinex)
-            return False, erroMsg, header
-            # fim com erro de readRinexObs()
-
-        # DEPRECTED upload do arquivo sendo feito pelo django
-        # # Salva arquivo em pasta de arquivos temporários
-        # rnxTempName = path.join(RINEX_UPLOAD_TEMP_DIR, (bpeName + '.OBS'))
-        # with open(rnxTempName,'wb') as destination:
-        # 	for chunk in rnxFile.chunks(): destination.write(chunk)
-
 
         return True, erroMsg, header
         # fim com sucesso de readRinexObs()
 
     except Exception as e:
 
-        erroMsg = 'Erro ao ler arquivo Rinex. ' + rnxFile.name + '. '
+        erroMsg = 'Erro ao ler o cabeçalho do arquivo Rinex: ' + rnxFile.name + '. '
         erroMsg += str(e)
 
         log(erroMsg)

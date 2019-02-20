@@ -28,9 +28,7 @@ def index(request):
 
 			form.save()
 
-			if TEST_SERVER:
-				pass
-			elif LINUX_SERVER:
+			if LINUX_SERVER:
 				check = requests.get('http://bernese.dec.ufv.br/check')
 			else:
 				check_line()

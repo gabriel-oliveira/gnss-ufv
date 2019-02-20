@@ -5,7 +5,7 @@ import requests
 from glob import glob
 import threading
 from datetime import datetime
-from os import path, remove
+from os import path, remove, walk
 from subprocess import Popen, run, PIPE, DEVNULL
 from bernese.core.berneseFilesTemplate import *
 from bernese.core.rinex import *
@@ -57,6 +57,7 @@ class ApiBernese:
                 end_f(**kwargs)
             except Exception as e:
                 log('Erro ao rodar endFunction')
+                log(str(e))
                 erroMsg = sys.exc_info()
                 log(str(erroMsg[0]))
                 log(str(erroMsg[1]))
@@ -116,9 +117,10 @@ class ApiBernese:
 
 
 #-------------------------------------------------------------------------------
-
-    def getServerFiles(file):
+    # Download dos arquivos do servidor linux
+    def getServerFiles(self, file):
         rfile = requests.get('http://gnss.ufv.br/media/' + file)
+        # TODO: se erro 404 raise something
         with open(path.join(RINEX_UPLOAD_TEMP_DIR,'linux_server',file),'w') as f:
             f.write(rfile.text)
 
@@ -144,6 +146,10 @@ class ApiBernese:
             rnxFile -> caminho completo do arquivo rinex
             header -> dictionary com os campos do cabeçalho
         '''
+        # Verifica se o arquivo rinex existe no servidor
+        if not path.isfile(rnxFile):
+            raise Exception('Arquivo ' + rnxFile + ' não existe no servidor')
+
         with open(rnxFile, 'rb') as r_file:
             (r_isOK, msgErro, header) = readRinexObs(r_file)
 
@@ -171,18 +177,40 @@ class ApiBernese:
 
             i = 0
             for rnxFile in self.pathRnxTempFiles:
-                with open(rnxFile,'r') as tmpFile, open(path.join( DATAPOOL_DIR,
-                                            'RINEX', setRnxName(self.headers[i])
-                                                         ), 'w') as destination:
+
+                verRinex = self.headers[i]['version']
+                if verRinex == 2: rinex_dir = 'RINEX'
+                elif verRinex == 3: rinex_dir = 'RINEX3'
+                else:
+                    raise Exception('Rinex version ' + str(verRinex))
+
+                new_rinex_path_name = path.join( DATAPOOL_DIR, rinex_dir, setRnxName(self.headers[i]) )
+
+                with open(rnxFile,'r') as tmpFile, open( new_rinex_path_name, 'w') as destination:
                     aux = tmpFile.read()
                     destination.write(aux)
+
+                if 'CRINEX VERS   / TYPE' in self.headers[i]:
+                    cmd = 'crx2rnx -f {}'.format(new_rinex_path_name)
+                    status = run(cmd,stdout=PIPE,stderr=PIPE)
+
+                if status.returncode != 1:
+                    remove(new_rinex_path_name)
+                else:
+                    log('Erro em ApiBernese -> crx2rnx')
+                    if path.isfile(new_rinex_path_name[:-1]+'O'):
+                        remove(new_rinex_path_name[:-1]+'O')
+                        log(new_rinex_path_name[:-1]+'O removido')
+                    raise Exception('Erro ao descompactar hatanaka. ' + str(status.stdout) + str(status.stderr))
+
                 i += 1
 
             return True
 
         except Exception as e:
 
-            log('Erro ao copiar Rinex para o Datapool')
+            log('Erro ao copiar Rinex para o Datapool. ' + str(e))
+            log(str(e))
             erroMsg = sys.exc_info()
             log(str(erroMsg[0]))
             log(str(erroMsg[1]))
@@ -215,6 +243,7 @@ class ApiBernese:
         except Exception as e:
 
             log('Erro ao copiar arquivo BLQ para o Datapool')
+            log(str(e))
             erroMsg = sys.exc_info()
             log(str(erroMsg[0]))
             log(str(erroMsg[1]))
@@ -228,9 +257,9 @@ class ApiBernese:
 
     # TODO Se não achar efemérides do CODE pegar do IGS
 
-        if TEST_SERVER:
-            self.datum = 'IGS14'
-            return True
+        # if TEST_SERVER:
+        #     self.datum = 'IGS14'
+        #     return True
 
         rnxDate = self.dateFile
 
@@ -249,6 +278,7 @@ class ApiBernese:
             sErpWFile = 'COD{}7.ERP.Z'.format(weekDay[:4])
             sP1C1File = 'P1C1{:02d}{:02d}.DCB.Z'.format(anoRed,rnxDate.month)
             sP1P2File = 'P1P2{:02d}{:02d}.DCB.Z'.format(anoRed,rnxDate.month)
+
 
             # Verifica se existe a efemeride do dia, se não pega a efemeride da semana
             try:
@@ -276,10 +306,11 @@ class ApiBernese:
 
                 pathFile = path.join(target_dir,sfile)
 
-                with urllib.request.urlopen(codURL) as response, open(pathFile, 'wb') as outFile:
-                    data = response.read()
-                    if not data: raise('Erro no download de: ' + sFile)
-                    outFile.write(data)
+                if not path.isfile(pathFile): # verifica se os arquivos já estão no servidor
+                    with urllib.request.urlopen(codURL) as response, open(pathFile, 'wb') as outFile:
+                        data = response.read()
+                        if not data: raise('Erro no download de: ' + sFile)
+                        outFile.write(data)
 
                 # status = run('7z x {} -o{} -y'.format(pathFile,target_dir),stdout=PIPE,stderr=PIPE)
                 # if status.returncode:
@@ -303,6 +334,7 @@ class ApiBernese:
         except Exception as e:
 
             log('Erro no download das efemérides precisas')
+            log(str(e))
             erroMsg = sys.exc_info()
             log(str(erroMsg[0]))
             log(str(erroMsg[1]))
@@ -417,11 +449,15 @@ class ApiBernese:
 
         #Salva arquivo rinex em DATAPOOL
         if not self.getRinex():
-            log('Erro ao salvar o arquivo RINEX no servidor')
+            msg = 'Erro ao salvar o arquivo RINEX no servidor'
+            log(msg)
+            if DEBUG: raise Exception(msg)
 
         #Salva arquivo BLQ em DATAPOOL
         if not self.getBlq():
-            log('Erro ao salvar o arquivo BLQ no servidor')
+            msg = 'Erro ao salvar o arquivo BLQ no servidor'
+            log(msg)
+            if DEBUG: raise Exception(msg)
 
         # Download das efemérides precisas
         if not self.getEphem():
@@ -486,9 +522,11 @@ class ApiBernese:
             if TEST_SERVER:
                 print(arg)
                 runPCFout = 'Ambiente de teste'
+                result = None
                 raise Exception(runPCFout)
 
             runPCFout = ['None']
+            result = None
             with Popen(arg,stdout=PIPE,stderr=PIPE,stdin=DEVNULL,cwd='E:\\Sistema') as pRun:
                 runPCFout = pRun.communicate()
                 erroBPE = runPCFout[1]
@@ -498,13 +536,14 @@ class ApiBernese:
 
         except Exception as e:
             log('Erro ao rodar BPE: ' + self.bpeName)
+            log(str(e))
             erroMsg = sys.exc_info()
             log(str(erroMsg[0]))
             log(str(erroMsg[1]))
             # for tb in traceback.format_exc(erroMsg[2]): log(tb)
             erroBPE = True
 
-        log('BPE: ' + self.bpeName + ' finalizado')
+        # log('BPE: ' + self.bpeName + ' finalizado')
 
 
         if not erroBPE:
@@ -512,33 +551,44 @@ class ApiBernese:
             log('BPE: ' + self.bpeName + ' finalizado com sucesso')
 
             try:
-                 result = self.getResult()
+                result = self.getResult()
             except Exception as e:
+                result = None
                 log('Erro pegar o resultado da BPE: ' + self.bpeName)
+                log(str(e))
                 erroMsg = sys.exc_info()
                 log(str(erroMsg[0]))
                 log(str(erroMsg[1]))
 
-            if result:
+        if result:
 
-                if len(self.headers) > 1: msg = 'Arquivos '
-                else:  msg = 'Arquivo '
-                for rnxHeader in self.headers:
-                    msg += path.basename(rnxHeader['RAW_NAME']) + ' '
-                if len(self.headers) > 1: msg += 'processado com sucesso.\n'
-                else:  msg += 'processados com sucesso.\n'
-                msg += 'Em anexo o resultado do processamento.'
+            if len(self.headers) > 1: msg = 'Arquivos '
+            else:  msg = 'Arquivo '
+            for rnxHeader in self.headers:
+                msg += path.basename(rnxHeader['RAW_NAME']) + ' '
+            if len(self.headers) > 1: msg += 'processado com sucesso.\n'
+            else:  msg += 'processados com sucesso.\n'
+            msg += 'Em anexo o resultado do processamento.'
 
-                # send_result_email(self.email,msg, result)
-                self.endFunction(status = True, id = self.proc_id,
-                                msg = msg, result = result)
+            # send_result_email(self.email,msg, result)
+            self.endFunction(status = True, id = self.proc_id,
+                            msg = msg, result = result)
 
-                self.clearCampaign()
+            self.clearCampaign()
 
-                return True
+            return True
 
-            else:
-                log('Arquivo com resultado do processamento não encontrado')
+        else:
+            log('Arquivo com resultado do processamento não encontrado. Pegando pasta completa como resultado. ')
+            try:
+                result = self.get_full_result()
+            except Exception as e:
+                result = None
+                log('Erro pegar a pasta como resultado da BPE: ' + self.bpeName)
+                log(str(e))
+                erroMsg = sys.exc_info()
+                log(str(erroMsg[0]))
+                log(str(erroMsg[1]))
 
 
         log('BPE Erro: ' + repr(runPCFout))
@@ -557,10 +607,10 @@ class ApiBernese:
             self.endFunction(status = False, id = self.proc_id,
                             msg = msg, result = bernErrorFile)
         else:
-            msg += '. \nPara detalhes sobre o erro favor entrar em contato.'
+            msg += '. \nErro desconhecido.'
             # send_result_email(self.email,msg)
             self.endFunction(status = False, id = self.proc_id,
-                            msg = msg, result = None)
+                            msg = msg, result = result)
 
         # self.clearCampaign()
 
@@ -629,7 +679,20 @@ class ApiBernese:
 #-------------------------------------------------------------------------------
 
     def get_full_result(self):
-        pass
+
+        resultZipFile = path.join(RESULTS_DIR,self.bpeName + 'campaign.zip')
+
+        with ZipFile(resultZipFile, 'x', ZIP_DEFLATED) as rZipFile:
+            for dirname, subdirs, files in walk(CAMPAIGN_DIR):
+                rZipFile.write(dirname)
+                for filename in files:
+                    rZipFile.write(path.join(dirname, filename))
+
+        # Verifica se arquivo está vazio
+        if rZipFile.namelist():
+            return resultZipFile
+        else:
+            return False
 
 #-------------------------------------------------------------------------------
 
@@ -644,8 +707,9 @@ class ApiBernese:
         listdir = [
 
             path.join(DATAPOOL_DIR,'RINEX'),
-            path.join(DATAPOOL_DIR,'BSW52'),
-            path.join(DATAPOOL_DIR,'COD'),
+            path.join(DATAPOOL_DIR,'RINEX3'),
+            # path.join(DATAPOOL_DIR,'BSW52'),
+            # path.join(DATAPOOL_DIR,'COD'),
 
             path.join(CAMPAIGN_DIR,'ATM'),
             path.join(CAMPAIGN_DIR,'BPE'),
