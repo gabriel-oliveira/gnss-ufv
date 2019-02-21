@@ -103,34 +103,52 @@ def readRinexObs(rnxFile):
         verRinex = float(header['RINEX VERSION / TYPE'][:9])  # %9.2f
         header['version'] = floor(verRinex)
 
+        if floor(verRinex) not in [2,3]:
+            erroMsg = 'Sem suporte para a versão Rinex ' + str(verRinex)
+            return False, erroMsg, header
+            # fim com erro de readRinexObs()
+
         # list with x,y,z cartesian
         if 'APPROX POSITION XYZ' in header and len(header['APPROX POSITION XYZ'].split()) == 3:
             header['APPROX POSITION XYZ'] = [
                 float(i) for i in header['APPROX POSITION XYZ'].split()
                 ]
         else:
+            # TODO: usar rtklib para estimar coordenada aproximada
             raise Exception('Erro em APPROX POSITION XYZ')
+
 
         if 'ANTENNA: DELTA H/E/N' in header and len(header['ANTENNA: DELTA H/E/N'].split()) == 3:
             header['ANTENNA DELTA H/E/N'] = [
                 float(i) for i in header['ANTENNA: DELTA H/E/N'].split()
                 ]
         else:
-            raise Exception('Erro em ANTENNA: DELTA H/E/N')
+            header['ANTENNA DELTA H/E/N'] = [ 0.0, 0.0, 0.0 ]
 
-        header['REC # / TYPE / VERS'] = [header['REC # / TYPE / VERS'][:19],
-                                        header['REC # / TYPE / VERS'][20:39],
-                                        header['REC # / TYPE / VERS'][40:]]
-        header['ANT # / TYPE'] = [header['ANT # / TYPE'][:19],
-                                header['ANT # / TYPE'][20:40]]
-        header['MARKER NAME'] = header['MARKER NAME'][:4].strip().upper()
-        header['MARKER NUMBER'] = header['MARKER NUMBER'][:9].strip().upper()
+        if 'REC # / TYPE / VERS' in header:
+            header['REC # / TYPE / VERS'] = [header['REC # / TYPE / VERS'][:19],
+                                            header['REC # / TYPE / VERS'][20:39],
+                                            header['REC # / TYPE / VERS'][40:]]
+        else:
+            raise Exception('Favor inserir o os dados sobre o receptor. ')
+
+        if 'ANT # / TYPE' in header:
+            header['ANT # / TYPE'] = [header['ANT # / TYPE'][:19],
+                                    header['ANT # / TYPE'][20:40]]
+        else:
+            raise Exception('Favor inserir os dados sobre a antena. ')
+
+        if 'MARKER NAME' in header:
+            header['MARKER NAME'] = header['MARKER NAME'][:4].strip().upper()
+        else:
+            header['MARKER NAME'] = 'NULL'
+
+        if 'MARKER NUMBER' in header:
+            header['MARKER NUMBER'] = header['MARKER NUMBER'][:9].strip().upper()
+        else:
+            header['MARKER NUMBER'] = '00000M001'
+
         header['RAW_NAME'] = rnxFile.name
-
-        if floor(verRinex) not in [2,3]:
-            erroMsg = 'Sem suporte para a versão Rinex ' + str(verRinex)
-            return False, erroMsg, header
-            # fim com erro de readRinexObs()
 
         #observation types
         # v2.xx
@@ -140,12 +158,10 @@ def readRinexObs(rnxFile):
         # header['SYS / # / OBS TYPES'] =
         #turn into int number of observations
 
-        # TODO deu erro no processamento do William
         # header['INTERVAL'] = float(header['INTERVAL'][:10])
 
         # TODO ler intervalo de observação
         # primeira observação é facil mas e a ultima???
-
 
         return True, erroMsg, header
         # fim com sucesso de readRinexObs()

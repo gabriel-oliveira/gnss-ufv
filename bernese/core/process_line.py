@@ -12,6 +12,7 @@ import threading
 import sys
 import os
 import socket
+import requests
 
 
 def is_connected():
@@ -158,7 +159,7 @@ def _run_next():
 
 
         try:
-            
+
             # registra no BD o começo do Processamento
             proc_waiting.start_process()
 
@@ -205,19 +206,12 @@ def finishing_process(**kwargs):
     send_result_email(proc.email,msg,result)
 
     # Verifica se tem outro para processar
-    check_line()
-
-    # TODO: Se o BPE der erro copiar os arquivos para uma pasta temp
-
-
-#  PPP
-# headers = [header]
-# pathTempFiles = [pathTempFile]
-# pathBlqTempFiles = []
-# if b: pathBlqTempFiles = [pathBlqTempFile]
-
-#  Relativo
-# headers = [b_header,r_header]
-# pathTempFiles = [b_pathTempFile,r_pathTempFile]
-# pathBlqTempFiles = []
-# if b: pathBlqTempFiles = [pathBlqTempFile]
+    try:
+        check_url = requests.get('http://bernese.dec.ufv.br/check/')
+        status_code = check_url.status_code
+    except Exception as e:
+        log(str(e))
+        status_code = 0
+    if not check_url.status_code == 200:
+        log('check_line: requests check failed')
+        check_line()

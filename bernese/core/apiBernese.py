@@ -194,14 +194,14 @@ class ApiBernese:
                     cmd = 'crx2rnx -f {}'.format(new_rinex_path_name)
                     status = run(cmd,stdout=PIPE,stderr=PIPE)
 
-                if status.returncode != 1:
-                    remove(new_rinex_path_name)
-                else:
-                    log('Erro em ApiBernese -> crx2rnx')
-                    if path.isfile(new_rinex_path_name[:-1]+'O'):
-                        remove(new_rinex_path_name[:-1]+'O')
-                        log(new_rinex_path_name[:-1]+'O removido')
-                    raise Exception('Erro ao descompactar hatanaka. ' + str(status.stdout) + str(status.stderr))
+                    if status.returncode != 1:
+                        remove(new_rinex_path_name)
+                    else:
+                        log('Erro em ApiBernese -> crx2rnx')
+                        if path.isfile(new_rinex_path_name[:-1]+'O'):
+                            remove(new_rinex_path_name[:-1]+'O')
+                            log(new_rinex_path_name[:-1]+'O removido')
+                        raise Exception('Erro ao descompactar hatanaka. ' + str(status.stdout) + str(status.stderr))
 
                 i += 1
 
@@ -257,9 +257,9 @@ class ApiBernese:
 
     # TODO Se não achar efemérides do CODE pegar do IGS
 
-        # if TEST_SERVER:
-        #     self.datum = 'IGS14'
-        #     return True
+        if TEST_SERVER:
+            self.datum = 'IGS14'
+            return True
 
         rnxDate = self.dateFile
 
@@ -441,51 +441,56 @@ class ApiBernese:
 
     def runBPE(self):
 
-        # confere se a fila de bpe threadings está liberada
-        self.filaBPE()
-
-        # limpa a pasta da campanha antes de iniciar o processamento
-        self.clearCampaign()
-
-        #Salva arquivo rinex em DATAPOOL
-        if not self.getRinex():
-            msg = 'Erro ao salvar o arquivo RINEX no servidor'
-            log(msg)
-            if DEBUG: raise Exception(msg)
-
-        #Salva arquivo BLQ em DATAPOOL
-        if not self.getBlq():
-            msg = 'Erro ao salvar o arquivo BLQ no servidor'
-            log(msg)
-            if DEBUG: raise Exception(msg)
-
-        # Download das efemérides precisas
-        if not self.getEphem():
-
-            if len(self.headers) > 1:
-                msg = 'Erro no processamento dos arquivos: '
-            else:
-                msg = 'Erro no processamento do arquivo: '
-
-            for rnxHeader in self.headers:
-                msg += path.basename(rnxHeader['RAW_NAME']) + ' '
-
-            msg += '. \n'
-            msg += 'Falha no download das efemérides precisas.'
-
-            log(msg)
-
-            # send_result_email(self.email,msg)
-            # self.clearCampaign()
-            self.endFunction(status = False, id = self.proc_id,
-                            msg = msg, result = None)
-
-            return False
-
-        # Gera os arquivos do bernese com dados da estação
-        self.setSTAfiles()
+        result = None
+        erroBPE = True
+        runPCFout = []
 
         try:
+
+            # confere se a fila de bpe threadings está liberada
+            self.filaBPE()
+
+            # limpa a pasta da campanha antes de iniciar o processamento
+            self.clearCampaign()
+
+            #Salva arquivo rinex em DATAPOOL
+            if not self.getRinex():
+                msg = 'Erro ao salvar o arquivo RINEX no servidor'
+                log(msg)
+                if DEBUG: raise Exception(msg)
+
+            #Salva arquivo BLQ em DATAPOOL
+            if not self.getBlq():
+                msg = 'Erro ao salvar o arquivo BLQ no servidor'
+                log(msg)
+                if DEBUG: raise Exception(msg)
+
+            # Download das efemérides precisas
+            if not self.getEphem():
+
+                if len(self.headers) > 1:
+                    msg = 'Erro no processamento dos arquivos: '
+                else:
+                    msg = 'Erro no processamento do arquivo: '
+
+                for rnxHeader in self.headers:
+                    msg += path.basename(rnxHeader['RAW_NAME']) + ' '
+
+                msg += '. \n'
+                msg += 'Falha no download das efemérides precisas.'
+
+                log(msg)
+
+                # send_result_email(self.email,msg)
+                # self.clearCampaign()
+                self.endFunction(status = False, id = self.proc_id,
+                                msg = msg, result = None)
+
+                return False
+
+            # Gera os arquivos do bernese com dados da estação
+            self.setSTAfiles()
+
 
             arg = 'E:\\Sistema\\runasit.exe "C:\\Perl64\\bin\\perl.exe '
 
@@ -542,6 +547,7 @@ class ApiBernese:
             log(str(erroMsg[1]))
             # for tb in traceback.format_exc(erroMsg[2]): log(tb)
             erroBPE = True
+            result = None
 
         # log('BPE: ' + self.bpeName + ' finalizado')
 
@@ -680,6 +686,9 @@ class ApiBernese:
 
     def get_full_result(self):
 
+        if TEST_SERVER:
+            return False
+
         resultZipFile = path.join(RESULTS_DIR,self.bpeName + 'campaign.zip')
 
         with ZipFile(resultZipFile, 'x', ZIP_DEFLATED) as rZipFile:
@@ -699,7 +708,7 @@ class ApiBernese:
     def clearCampaign(self):
 
         # Não roda a função. Evita de limpar os dados para depuração.
-        # if DEBUG:
+        # if TEST_SERVER:
         #     return True
 
         log('Clear Campaign Starting')

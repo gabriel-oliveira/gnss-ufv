@@ -14,7 +14,6 @@ from django.core.paginator import Paginator
 from bernese.core.models import Proc_Request
 from django.contrib.auth.decorators import login_required
 
-
 def index(request):
 	# return HttpResponse('Em manutenção!')
 	template_name = 'index.html'
@@ -115,14 +114,14 @@ def monitor(request):
 		check = requests.get('http://bernese.dec.ufv.br/monitoramento')
 		msg = check.text
 	else:
-		msg = 'Processamentos ativos: '
-		nproc = 0
-		for tr in threading.enumerate():
-			# if tr.name[:4] == 'bern':
-			msg += tr.name + ', '
-			nproc += 1
-
-		if not nproc: msg += 'Nenhum'
+		msg = 'Processamentos ativos: ' + str(threading.enumerate())
+		# nproc = 0
+		# for tr in threading.enumerate():
+		# 	# if tr.name[:4] == 'bern':
+		# 	msg += tr.name + ', '
+		# 	nproc += 1
+		#
+		# if not nproc: msg += 'Nenhum'
 
 	return HttpResponse(msg)
 
@@ -137,18 +136,28 @@ def check(request):
 
 	if LINUX_SERVER:
 		check = requests.get('http://bernese.dec.ufv.br/check')
-	elif TEST_SERVER:
-		pass
 	else:
 		check_line()
 
-	return index(request)
+	return process_line_view(request)
 
 @login_required
 def process_line_view(request):
-    proc_list = Proc_Request.objects.all()
-    paginator = Paginator(proc_list, 100) # Show 100 per page
 
-    page = request.GET.get('page')
-    procs = paginator.get_page(page)
-    return render(request, 'proc_list.html', {'procs': procs, 'isFila' : True})
+	threads = monitor(request).content.decode()
+
+	proc_list = Proc_Request.objects.all()
+	paginator = Paginator(proc_list, 100) # Show 100 per page
+	page = request.GET.get('page')
+	procs = paginator.get_page(page)
+
+	proc_run = Proc_Request.objects.filter(proc_status = 'running')
+
+	context = {
+		'procs': procs,
+		'proc_run' : proc_run,
+		'isFila' : True,
+		'threads' : threads
+		}
+
+	return render(request, 'proc_list.html', context)

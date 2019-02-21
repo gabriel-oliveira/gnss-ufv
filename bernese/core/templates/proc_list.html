@@ -1,7 +1,53 @@
 {% extends 'base.html' %}
 {% block content %}
 <div class="container theme-showcase" role="main">
+  {% if user.is_admin %}
+  {{ threads }}
+  {% endif %}
   <h3>Fila de Processamento</h3>
+  {% if proc_run %}
+  Processando ID
+  {% for pr in proc_run %}
+  {{pr.id}}
+  {% endfor %}
+  {% endif %}
+  <nav aria-label="...">
+    <ul class="pager">
+        {% if procs.has_previous %}
+            <li class="previous">
+              <a style="color:black" href="?page=1">
+                <span aria-hidden="true">&larr;</span> Primeira
+              </a>
+            </li>
+            <li>
+              <a style="color:black" href="?page={{ procs.previous_page_number }}">
+                Anterior
+              </a>
+            </li>
+        {% endif %}
+
+        <span class="current">
+          <li>
+            <a style="color:black">
+              Pagina {{ procs.number }} de {{ procs.paginator.num_pages }}
+            </a>
+          </li>
+        </span>
+
+        {% if procs.has_next %}
+        <li>
+          <a style="color:black" href="?page={{ procs.next_page_number }}">
+            Próxima
+          </a>
+        </li>
+        <li class="next">
+          <a style="color:black" href="?page={{ procs.paginator.num_pages }}">
+            Última <span aria-hidden="true">&rarr;</span>
+          </a>
+        </li>
+        {% endif %}
+    </ul>
+  </nav>
 <table class='table'>
   <thead>
     <tr>
