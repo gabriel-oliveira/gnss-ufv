@@ -111,8 +111,11 @@ def contact(request):
 def monitor(request):
 
 	if LINUX_SERVER:
-		check = requests.get('http://bernese.dec.ufv.br/monitoramento')
-		msg = check.text
+		try:
+			check = requests.get('http://bernese.dec.ufv.br/monitoramento')
+			msg = check.text
+		except:
+			msg = b'Falha na comunicacao com servidor'
 	else:
 		msg = 'Processamentos ativos: ' + str(threading.enumerate())
 		# nproc = 0
@@ -135,7 +138,10 @@ def custom_error_500_view(request):
 def check(request):
 
 	if LINUX_SERVER:
-		check = requests.get('http://bernese.dec.ufv.br/check')
+		try:
+			check = requests.get('http://bernese.dec.ufv.br/check')
+		except:
+			pass
 	else:
 		check_line()
 

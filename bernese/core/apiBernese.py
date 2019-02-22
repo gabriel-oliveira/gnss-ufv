@@ -121,7 +121,7 @@ class ApiBernese:
     def getServerFiles(self, file):
         rfile = requests.get('http://gnss.ufv.br/media/' + file)
         # TODO: se erro 404 raise something
-        with open(path.join(RINEX_UPLOAD_TEMP_DIR,'linux_server',file),'w') as f:
+        with open(path.join(RINEX_UPLOAD_TEMP_DIR,'linux_server',file),'w',newline='\n') as f:
             f.write(rfile.text)
 
 
@@ -441,6 +441,8 @@ class ApiBernese:
 
     def runBPE(self):
 
+        # TODO: Rever esse método. utilizar o finaly para mandar email deve melhar.
+
         result = None
         erroBPE = True
         runPCFout = []
@@ -457,13 +459,13 @@ class ApiBernese:
             if not self.getRinex():
                 msg = 'Erro ao salvar o arquivo RINEX no servidor'
                 log(msg)
-                if DEBUG: raise Exception(msg)
+                raise Exception(msg)
 
             #Salva arquivo BLQ em DATAPOOL
             if not self.getBlq():
                 msg = 'Erro ao salvar o arquivo BLQ no servidor'
                 log(msg)
-                if DEBUG: raise Exception(msg)
+                raise Exception(msg)
 
             # Download das efemérides precisas
             if not self.getEphem():
@@ -477,7 +479,7 @@ class ApiBernese:
                     msg += path.basename(rnxHeader['RAW_NAME']) + ' '
 
                 msg += '. \n'
-                msg += 'Falha no download das efemérides precisas.'
+                msg += 'Falha no download das efemérides precisas do CODE.'
 
                 log(msg)
 
@@ -673,7 +675,7 @@ class ApiBernese:
                 if path.isfile(file):
                     rZipFile.write(file, path.basename(file))
                 else:
-                    log('Arquivo ' + path.basename(file) + ' não encontrado.\n')
+                    log('Arquivo ' + path.basename(file) + ' não encontrado.')
 
         # Verifica se arquivo está vazio
         if rZipFile.namelist():
