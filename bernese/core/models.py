@@ -24,6 +24,7 @@ class Proc_Request(models.Model):
     started_at = models.DateTimeField('Iniciado em', null=True, blank=True)
     finished_at = models.DateTimeField('Finalizado em',null=True, blank=True)
     linux_server = models.BooleanField('Solicitação do servidor linux',default=False)
+    hoi_correction = models.BooleanField('Correção da Ionosfera de ordem superior',default=True)
 
     def __str__(self):
         return 'Process request id (' + str(self.id) + ')'

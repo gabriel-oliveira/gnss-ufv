@@ -213,7 +213,7 @@ class simpleRelativo(forms.ModelForm):
 		model = Details_Relativo
 		fields = (
 			'email', 'rinex_base_file', 'rinex_rover_file',
-			'tectonic_plate_base', 'tectonic_plate_rover', 'blq_file',
+			'tectonic_plate_base', 'tectonic_plate_rover', 'blq_file', 'hoi_correction',
 			'coord_ref_type', #'coord_ref'
 			)
 		widgets = {
@@ -233,5 +233,6 @@ class simpleRelativo(forms.ModelForm):
 			'tectonic_plate_base' : 'Selecione a placa tectônica da estação BASE',
 			'tectonic_plate_rover' : 'Selecione a placa tectônica da estação ROVER',
 			'blq_file' : 'Arquivo BLQ (Ocean Tide Loading)',
-			'coord_ref_type' : 'Coordenadas de referência (BASE)'
+			'coord_ref_type' : 'Coordenadas de referência (BASE)',
+			'hoi_correction' : 'Correção dos efeitos ionosféricos de ordem superior',
 		}

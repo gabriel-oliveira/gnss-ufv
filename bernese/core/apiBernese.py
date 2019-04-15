@@ -37,6 +37,7 @@ class ApiBernese:
             self.proc_id = self.bpeName
         # self.email = kwargs['email']
         self.linux_server = kwargs['linux_server']
+        self.hoi_correction = kwargs['hoi_correction']
         if self.linux_server and kwargs['blq_file']:
             self.getServerFiles(kwargs['blq_file'])
             self.pathBlqTempFiles = [path.join(RINEX_UPLOAD_TEMP_DIR,'linux_server',kwargs['blq_file'])]
@@ -513,6 +514,9 @@ class ApiBernese:
             arg += ' V_REFINF ' + self.datum
 
             arg += ' V_PCV I' + self.datum[-2:]
+
+            if self.hoi_correction:
+                arg += ' V_HOIFIL HOI$YSS+0'
 
             # TODO: adicionar outros argumentos aqui
 

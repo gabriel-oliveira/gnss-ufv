@@ -97,6 +97,7 @@ def _run_next():
         'proc_method' : proc_waiting.proc_method,
         'endFunction' : finishing_process,
         'linux_server' : proc_waiting.linux_server,
+        'hoi_correction' : proc_waiting.hoi_correction,
         }
 
         proc_details = proc_waiting.get_proc_details()
