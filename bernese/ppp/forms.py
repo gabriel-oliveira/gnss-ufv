@@ -77,6 +77,7 @@ class simplePPP(ModelForm):
 						'tectonic_plate' : self.cleaned_data['tectonic_plate'],
 						'blq_file' :  bfile_newname,
 						'rinex_file' : rfile_name,
+						'hoi_correction' : self.cleaned_data['hoi_correction'],
 					}
 					md = Details_PPP(**context)
 					md.save()
