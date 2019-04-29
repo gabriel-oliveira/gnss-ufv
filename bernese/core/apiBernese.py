@@ -532,18 +532,17 @@ class ApiBernese:
 
             if TEST_SERVER:
                 print(arg)
-                runPCFout = 'Ambiente de teste'
+                runPCFout = ['Ambiente de teste']
+                erroBPE = False
+            else:
+                runPCFout = ['None']
                 result = None
-                raise Exception(runPCFout)
-
-            runPCFout = ['None']
-            result = None
-            with Popen(arg,stdout=PIPE,stderr=PIPE,stdin=DEVNULL,cwd='E:\\Sistema') as pRun:
-                runPCFout = pRun.communicate()
-                erroBPE = runPCFout[1]
-            ## Another way
-            # pRun = run(arg,stderr=PIPE,cwd='E:\\Sistema')
-            # erroBPE = pRun.stderr
+                with Popen(arg,stdout=PIPE,stderr=PIPE,stdin=DEVNULL,cwd='E:\\Sistema') as pRun:
+                    runPCFout = pRun.communicate()
+                    erroBPE = runPCFout[1]
+                    ## Another way
+                    # pRun = run(arg,stderr=PIPE,cwd='E:\\Sistema')
+                    # erroBPE = pRun.stderr
 
         except Exception as e:
             log('Erro ao rodar BPE: ' + self.bpeName)
@@ -566,7 +565,7 @@ class ApiBernese:
                 result = self.getResult()
             except Exception as e:
                 result = None
-                log('Erro pegar o resultado da BPE: ' + self.bpeName)
+                log('Erro ao pegar o resultado da BPE: ' + self.bpeName)
                 log(str(e))
                 erroMsg = sys.exc_info()
                 log(str(erroMsg[0]))
@@ -576,15 +575,32 @@ class ApiBernese:
 
             if len(self.headers) > 1: msg = 'Arquivos '
             else:  msg = 'Arquivo '
+            resultFileName = ''
             for rnxHeader in self.headers:
                 msg += path.basename(rnxHeader['RAW_NAME']) + ' '
-            if len(self.headers) > 1: msg += 'processado com sucesso.\n'
-            else:  msg += 'processados com sucesso.\n'
-            msg += 'Em anexo o resultado do processamento.'
+                resultFileName += path.basename(rnxHeader['RAW_NAME'])[:-4] + '_'
+            resultFileName += '.zip'
+            if len(self.headers) > 1: msg += 'processados com sucesso.\n'
+            else:  msg += 'processado com sucesso.\n'
+            msg += 'Em anexo o resultado do processamento.\n\n'
 
-            # send_result_email(self.email,msg, result)
+            if self.coord_result:
+                msg += 'Estação: ' + self.coord_result[0] + '\n'
+                msg += 'Coordenadas Estimadas (X Y Z):'
+                msg += '\t{:.4f}\t{:.4f}\t{:.4f}\n'.format(*self.coord_result[1:4]).replace('.',',')
+                msg += 'Desvios (X Y Z): '
+                msg += '\t{:.4f}\t{:.4f}\t{:.4f}\n\n'.format(*self.coord_result[4:7]).replace('.',',')
+                msg += 'Sistema de Referência e Época: '
+                if self.prcType == 'ppp':
+                    msg += self.datum + ' '
+                    msg += '{:d}'.format(self.dateFile.year) + ','
+                    msg += '{:4.2f}'.format(date2yearDay(self.dateFile)/365.0)[2:]
+                elif self.prcType == 'relativo':
+                    msg += 'O mesmo da coordenada de referência definida na submissão'
+
+
             self.endFunction(status = True, id = self.proc_id,
-                            msg = msg, result = result)
+                            msg = msg, result = result, filename = resultFileName)
 
             self.clearCampaign()
 
@@ -683,9 +699,38 @@ class ApiBernese:
 
         # Verifica se arquivo está vazio
         if rZipFile.namelist():
+            self.coord_result  = self.get_coord_result(snxFilePath)
             return resultZipFile
         else:
             return False
+
+
+#-------------------------------------------------------------------------------
+
+    def get_coord_result(self,snxfile):
+
+        with open(snxfile,'r') as sfile:
+            snx = sfile.readlines()
+
+        snxFile = iter(snx)
+        while True:
+            line = next(snxFile)
+            if line:
+                if line.split()[0] == '+SOLUTION/ESTIMATE':
+                    header = next(snxFile)
+                    line = next(snxFile).split()
+                    coord_X = float(line[8])
+                    sigm_X = float(line[9])
+                    line = next(snxFile).split()
+                    coord_Y = float(line[8])
+                    sigm_Y = float(line[9])
+                    line = next(snxFile).split()
+                    coord_Z = float(line[8])
+                    sigm_Z = float(line[9])
+                    station = line[2]
+                    return [station, coord_X, coord_Y, coord_Z, sigm_X, sigm_Y, sigm_Z]
+            else:
+                return False
 
 
 #-------------------------------------------------------------------------------
@@ -714,8 +759,8 @@ class ApiBernese:
     def clearCampaign(self):
 
         # Não roda a função. Evita de limpar os dados para depuração.
-        # if TEST_SERVER:
-        #     return True
+        if TEST_SERVER:
+            return True
 
         log('Clear Campaign Starting')
 

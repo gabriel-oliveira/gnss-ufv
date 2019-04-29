@@ -9,7 +9,7 @@ import sys
 
 
 def send_mail_template(subject, template_name, context, recipient_list, pathFile,
-	from_email=DEFAULT_FROM_EMAIL, fail_silently=False):
+	from_email=DEFAULT_FROM_EMAIL, fail_silently=False, pathFileName=None):
 
 	message_html = render_to_string(template_name, context)
 
@@ -17,7 +17,12 @@ def send_mail_template(subject, template_name, context, recipient_list, pathFile
 
 	email = EmailMultiAlternatives(subject=subject, body=message_txt, from_email=from_email, to=recipient_list)
 	email.attach_alternative(message_html, "text/html")
-	if pathFile: email.attach_file(pathFile)
+
+	if pathFile:
+		with open(pathFile,'rb') as rfile:
+			if not pathFileName: pathFileName = rfile.name
+			afile = rfile.read()
+			email.attach(pathFileName,afile)
 
 	try:
 
@@ -59,7 +64,7 @@ def enviar_email(name,email,message,mpathFile=''):
 		args = (subject, template_name, context, [CONTACT_EMAIL],mpathFile)
 		).start()
 
-def send_result_email(to_email,message,mpathFile=''):
+def send_result_email(to_email,message,mpathFile='',mpathFileName=None):
 	subject = '[GNSS-UFV] Resultado do Processamento'
 
 	context = {
@@ -75,7 +80,7 @@ def send_result_email(to_email,message,mpathFile=''):
 	if mpathFile: msg_txt += mpathFile + '\n'
 
 	# Enviando o email
-	if not send_mail_template(subject, template_name, context, [to_email], mpathFile):
+	if not send_mail_template(subject, template_name, context, [to_email], mpathFile, pathFileName=mpathFileName):
 		msg_txt += 'EMAIL NÃO ENVIADO!!!\n'
 
 	with open(BASE_DIR + '/backupMsgContato.txt','a') as f:

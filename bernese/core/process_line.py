@@ -196,6 +196,10 @@ def finishing_process(**kwargs):
     id = kwargs['id']
     msg = kwargs['msg']
     result = kwargs['result']
+    try:
+        filename = kwargs['filename']
+    except:
+        filename = None
 
     # Pegar processo pelo id
     proc = Proc_Request.objects.get(id=id)
@@ -204,7 +208,7 @@ def finishing_process(**kwargs):
     proc.finish_process()
 
     # Enviando email
-    send_result_email(proc.email,msg,result)
+    send_result_email(proc.email,msg,result,filename)
 
     # Verifica se tem outro para processar
     try:
@@ -213,6 +217,6 @@ def finishing_process(**kwargs):
     except Exception as e:
         log(str(e))
         status_code = 0
-    if not check_url.status_code == 200:
+    if not status_code == 200:
         log('check_line: requests check failed')
         check_line()

@@ -55,6 +55,9 @@
                   document.getElementById('id_coord_X').disabled=true;
                   document.getElementById('id_coord_Y').disabled=true;
                   document.getElementById('id_coord_Z').disabled=true;
+                  document.getElementById('id_coord_dX').disabled=true;
+                  document.getElementById('id_coord_dY').disabled=true;
+                  document.getElementById('id_coord_dZ').disabled=true;
                   document.getElementById('id_coord_X').required=false;
                   document.getElementById('id_coord_Y').required=false;
                   document.getElementById('id_coord_Z').required=false;
@@ -70,6 +73,9 @@
                 document.getElementById('id_coord_X').disabled=false;
                 document.getElementById('id_coord_Y').disabled=false;
                 document.getElementById('id_coord_Z').disabled=false;
+                document.getElementById('id_coord_dX').disabled=false;
+                document.getElementById('id_coord_dY').disabled=false;
+                document.getElementById('id_coord_dZ').disabled=false;
                 document.getElementById('id_coord_X').required=true;
                 document.getElementById('id_coord_Y').required=true;
                 document.getElementById('id_coord_Z').required=true;
@@ -108,19 +114,25 @@
         <!-- coordenadas de referencia -->
         <div class="form-group">
             <div class="row">
-              <div class="col-lg-6">
+              <div class="col-sm-12">
 
                   <div class="input-group">
                   <span class="input-group-addon">X (m):</span>
                   <input type="number" step = "0.000001" max="999999999" min="-999999999" name="coord_X" class="form-control" disabled="" id="id_coord_X">
+                  <span class="input-group-addon">Desvio X (m):</span>
+                  <input type="number" step = "0.000001" max="999999999" min="-999999999" name="coord_dX" class="form-control" disabled="" id="id_coord_dX">
                   </div>
                   <div class="input-group">
                   <span class="input-group-addon">Y (m):</span>
                   <input type="number" step = "0.000001" max="999999999" min="-999999999" name="coord_Y" class="form-control" disabled="" id="id_coord_Y">
+                  <span class="input-group-addon">Desvio Y (m):</span>
+                  <input type="number" step = "0.000001" max="999999999" min="-999999999" name="coord_dY" class="form-control" disabled="" id="id_coord_dY">
                   </div>
                   <div class="input-group">
                   <span class="input-group-addon">Z (m):</span>
                   <input type="number" step = "0.000001" max="999999999" min="-999999999" name="coord_Z" class="form-control" disabled="" id="id_coord_Z">
+                  <span class="input-group-addon">Desvio Z (m):</span>
+                  <input type="number" step = "0.000001" max="999999999" min="-999999999" name="coord_dZ" class="form-control" disabled="" id="id_coord_dZ">
                   </div>
 
                   <!-- <p class="help-block">Favor inserir coordenadas no DATUM IGS14, época 2010.0 (ITRF 2014)</p> -->

@@ -6,11 +6,9 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
-    <meta name="description" content="Template Base do GNSS-UFV">
-    <meta name="author" content="Gabriel">
-
+    <meta name="description" content="Sistema de processamento de dados GNSS da UFV">
+    <meta name="author" content="Gabriel Diniz de Oliveira">
     <title>GNSS-UFV</title>
-
     <link rel="shortcut icon" type="image/png" href="{% static 'logo-gnss-ufv.png' %}"/>
 
     <!-- Custom styles for this template -->
@@ -52,13 +50,19 @@
           <ul class="nav navbar-nav">
             <li {% if isHome %} class="active"{% endif %}><a href="{% url 'core:index' %}">Início</a></li>
             <li {% if isPPP %} class="active"{% endif %}><a href="{% url 'ppp:index' %}">PPP</a></li>
-            <li {% if isRelativo %} class="active"{% endif %}><a href="{% url 'relativo:index' %}">Relativo</a></li>
+            <li {% if isRelativo %} class="dropdown active" {% else %} class="dropdown" {% endif %}>
+              <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Relativo <span class="caret"></span></a>
+              <ul class="dropdown-menu">
+                <li><a href="{% url 'relativo:index' %}">Simples</a></li>
+                <li><a href="#">Rede</a></li>
+              </ul>
+            </li>
             <li {% if isFila %} class="active"{% endif %}><a href="{% url 'core:process_line_view' %}">Fila</a></li>
             <li {% if isTools %} class="active"{% endif %}><a href="{% url 'core:tools' %}">Ferramentas</a></li>
             <li {% if isAbout %} class="active"{% endif %}><a href="{% url 'core:about' %}">Sobre</a></li>
             <li {% if isContact %} class="active"{% endif %}><a href="{% url 'core:contact' %}">Contato</a></li>
             {% if user.is_admin %}
-            <li><a href="controle/"><span class="glyphicon glyphicon-wrench" aria-hidden="true"></span></a></li>
+            <li><a href="{% url 'admin:index' %}"><span class="glyphicon glyphicon-wrench" aria-hidden="true"></span></a></li>
             {% endif %}
           </ul>
             <div align='right'>
