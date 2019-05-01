@@ -54,7 +54,7 @@
               <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Relativo <span class="caret"></span></a>
               <ul class="dropdown-menu">
                 <li><a href="{% url 'relativo:index' %}">Simples</a></li>
-                <li><a href="#">Rede</a></li>
+                <li><a href="{% url 'rede:index' %}">Rede</a></li>
               </ul>
             </li>
             <li {% if isFila %} class="active"{% endif %}><a href="{% url 'core:process_line_view' %}">Fila</a></li>

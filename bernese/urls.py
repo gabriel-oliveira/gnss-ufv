@@ -25,6 +25,7 @@ urlpatterns = [
     path('', include('bernese.core.urls', namespace='core')),
     path('ppp/', include('bernese.ppp.urls', namespace='ppp')),
     path('relativo/', include('bernese.relativo.urls', namespace='relativo')),
+    path('rede/', include('bernese.rede.urls', namespace='rede')),
     path('conta/', include('bernese.accounts.urls', namespace='accounts')),
     path('favicon.ico',RedirectView.as_view(url='/static/favicon.ico', permanent=True))
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT) + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

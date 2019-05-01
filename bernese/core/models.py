@@ -8,6 +8,7 @@ class Proc_Request(models.Model):
     METHOD_CHOICES = (
         ('ppp', 'PPP'),
         ('relativo', 'Relativo'),
+        ('rede', 'Rede'),
     )
 
     STATUS_CHOICES = (
@@ -49,6 +50,9 @@ class Proc_Request(models.Model):
         elif self.proc_method == 'relativo':
             from bernese.relativo.models import Details_Relativo
             return Details_Relativo.objects.get(pk=self.id)
+        elif self.proc_method == 'rede':
+            from bernese.rede.models import Details_Rede
+            return Details_Rede.objects.get(pk=self.id)
         else:
             return None
 
@@ -101,3 +105,22 @@ class Coordinates(models.Model):
     class Meta:
         verbose_name = 'Coordenada de Referência'
         verbose_name_plural = 'Coordenadas de Referência'
+
+
+
+def basesRBMC(X,Y,Z,dist):
+
+    query = '''SELECT *
+                FROM rbmc,
+                    ST_Transform(
+                    ST_SetSRID(
+                    ST_MakePoint({:12.8f},{:12.8f},{:12.8f}),4919),4326) AS ponto
+                WHERE ST_Dwithin(rbmc.geom,ponto,{:d}000,true)'''.format(X,Y,Z,int(dist))
+
+    query_set = Proc_Request.objects.raw(query)
+
+    stations =[]
+    for field in query_set:
+        stations.append(field.name)
+
+    return stations

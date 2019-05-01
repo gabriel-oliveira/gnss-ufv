@@ -5,7 +5,7 @@ import requests
 from glob import glob
 import threading
 from datetime import datetime
-from os import path, remove, walk
+from os import path, remove, walk, rename
 from subprocess import Popen, run, PIPE, DEVNULL
 from bernese.core.berneseFilesTemplate import *
 from bernese.core.rinex import *
@@ -81,33 +81,59 @@ class ApiBernese:
 
             self.headers = [header]
 
-        if kwargs['proc_method'] == 'relativo':
+        elif kwargs['proc_method'] == 'relativo':
 
             if self.linux_server:
                 self.getServerFiles(kwargs['rinex_base_file'])
                 self.getServerFiles(kwargs['rinex_rover_file'])
                 self.pathRnxTempFiles = [
-                path.join(RINEX_UPLOAD_TEMP_DIR,'linux_server',kwargs['rinex_base_file']),
                 path.join(RINEX_UPLOAD_TEMP_DIR,'linux_server',kwargs['rinex_rover_file']),
+                path.join(RINEX_UPLOAD_TEMP_DIR,'linux_server',kwargs['rinex_base_file']),
                 ]
             else:
                 self.pathRnxTempFiles = [
-                                    kwargs['rinex_base_file'],
-                                    kwargs['rinex_rover_file']
+                                    kwargs['rinex_rover_file'],
+                                    kwargs['rinex_base_file']
                                     ]
 
-            b_header = self.getHeader(self.pathRnxTempFiles[0])
-            b_header['ID'] = 1
+            b_header = self.getHeader(self.pathRnxTempFiles[1])
+            b_header['ID'] = 2
             b_header['FLAG'] = 'B'
             b_header['PLATE'] = kwargs['tectonic_plate_base']
             b_header['APPROX POSITION XYZ'] = kwargs['coord_ref']
 
-            r_header = self.getHeader(self.pathRnxTempFiles[1])
-            r_header['ID'] = 2
+            r_header = self.getHeader(self.pathRnxTempFiles[0])
+            r_header['ID'] = 1
             r_header['FLAG'] = ''
             r_header['PLATE'] = kwargs['tectonic_plate_rover']
 
-            self.headers = [b_header, r_header]
+            self.headers = [r_header, b_header]
+
+        elif kwargs['proc_method'] == 'rede':
+
+            if self.linux_server:
+                self.getServerFiles(kwargs['rinex_rover_file'])
+                self.pathRnxTempFiles = [
+                path.join(RINEX_UPLOAD_TEMP_DIR,'linux_server',kwargs['rinex_rover_file']),
+                ]
+            else:
+                self.pathRnxTempFiles = [
+                                    kwargs['rinex_rover_file']
+                                    ]
+
+            r_header = self.getHeader(self.pathRnxTempFiles[0])
+            r_header['ID'] = 1
+            r_header['FLAG'] = ''
+            r_header['PLATE'] = kwargs['tectonic_plate_rover']
+
+            self.tectonic_plate_base = kwargs['tectonic_plate_base']
+
+            self.headers = [r_header]
+
+            self.bases_rbmc = kwargs['bases_rbmc']
+
+        else:
+            raise Exception('procType: ' + kwargs['proc_method'])
 
 
         hDate = self.headers[0]['TIME OF FIRST OBS'].split()
@@ -156,17 +182,11 @@ class ApiBernese:
 
         if not r_isOK:
             erro = 'Em ApiBernese(): Erro ao ler os dados do arquivo: '
-            erro += str(kwargs['rinex_file'])
+            erro += str(rnxFile)
             erro += msgErro
             raise Exception(erro)
 
         return header
-
-#-------------------------------------------------------------------------------
-
-    def haveEphem(rnxDate):
-        # TODO verificar efemerides
-        return True
 
 
 #-------------------------------------------------------------------------------
@@ -258,9 +278,9 @@ class ApiBernese:
 
     # TODO Se não achar efemérides do CODE pegar do IGS
 
-        if TEST_SERVER:
-            self.datum = 'IGS14'
-            return True
+        # if TEST_SERVER:
+        #     self.datum = 'IGS14'
+        #     return True
 
         rnxDate = self.dateFile
 
@@ -385,12 +405,13 @@ class ApiBernese:
         pSTAfile = path.join(ref52_datapool_dir,campaignName+'.STA')
         pCRDfile = path.join(ref52_datapool_dir,campaignName+'.CRD')
         pABBfile = path.join(ref52_datapool_dir,campaignName+'.ABB')
+        pBSLfile = path.join(ref52_datapool_dir,campaignName+'.BSL')
         # pVELfile = path.join(ref52_datapool_dir,campaignName+'.VEL')
 
         # Gerando arquivo PLD (placa tectonica da estação)
         with open(pPLDfile,'w') as f:
 
-            f.write(PLD_HEADER_TEMPLATE_FILE.format(**{'DATUM': 'IGS14'}))
+            f.write(PLD_HEADER_TEMPLATE_FILE.format(**{'DATUM': self.datum,}))
 
             for header in self.headers:
                 f.write(PLD_BODY_TEMPLATE_FILE.format(**header))
@@ -429,6 +450,18 @@ class ApiBernese:
             for header in self.headers:
                 f.write(ABB_BODY_TEMPLATE_FILE.format(**header))
 
+        # Gerando arquivo BSL (linhas de base)
+        if self.prcType in ['relativo','rede']:
+            with open(pBSLfile,'w') as f:
+                for header in self.headers[1:]:
+                    context = {
+                    'b_name' : header['MARKER NAME'],
+                    'b_number' : header['MARKER NUMBER'],
+                    'r_name' : self.headers[0]['MARKER NAME'],
+                    'r_number' : self.headers[0]['MARKER NUMBER']
+                    }
+                    f.write('{b_name:<4s} {b_number:<9s}   {r_name:<4s} {r_number:<9s}  \n'.format(**context))
+
         # Gerando arquivo VEL (velocidades da estação)
         # with open(pVELfile,'w') as f:
         #
@@ -437,6 +470,80 @@ class ApiBernese:
         #     for header in self.headers:
         #         f.write(VEL_BODY_TEMPLATE_FILE.format(**header))
 
+#-------------------------------------------------------------------------------
+
+    def getRBMC(self):
+
+        rnxDate = self.dateFile
+
+        ano = str(self.dateFile.year)
+        dia = '{:03d}'.format(date2yearDay(self.dateFile))
+        if rnxDate.year > 1999:
+            anoRed = rnxDate.year - 2000
+        else:
+            anoRed = rnxDate.year - 1900
+
+        ftp_link = 'ftp://geoftp.ibge.gov.br/informacoes_sobre_posicionamento_geodesico/rbmc/dados/{}/{}/'.format(ano,dia)
+
+        bases = self.bases_rbmc.split()
+
+        if self.headers[0]['MARKER NAME'] in bases: bases.remove(self.headers[0]['MARKER NAME'])
+
+        rinex_datapool_dir = path.join(DATAPOOL_DIR,'RINEX')
+
+        bases_ok = [i for i in bases]
+        i = 1
+        for base in bases:
+
+            erro = False
+
+            file_name = base.lower() + dia + '1.zip'
+            file_link = (ftp_link + file_name)
+            zfile_target = path.join(rinex_datapool_dir, file_name)
+
+            try:
+                with urllib.request.urlopen(file_link) as response, open(zfile_target, 'wb') as outFile:
+                    data = response.read()
+                    if data: outFile.write(data)
+                    else: erro = True
+            except:
+                erro = True
+
+            if not erro:
+
+                rnxO_file_name = file_name[:-3] + '{:02d}o'.format(anoRed)
+                rnxD_file_name = file_name[:-3] + '{:02d}d'.format(anoRed)
+
+                with ZipFile(zfile_target) as zfile:
+                    if rnxO_file_name in zfile.namelist():
+                        extract_file = zfile.extract(rnxO_file_name)
+                        target_file = path.join(rinex_datapool_dir, file_name[:-5].upper() + '0.{:02d}O'.format(anoRed))
+                        rename(extract_file, target_file)
+                    elif rnxD_file_name in zfile.namelist():
+                        extract_file = zfile.extract(rnxD_file_name)
+                        target_file = path.join(rinex_datapool_dir, file_name[:-5].upper() + '0.{:02d}D'.format(anoRed))
+                        rename(extract_file, target_file)
+                        status = os.system('crx2rnx {}'.format(target_file))
+                        if not status:
+                            remove(target_file)
+                        else:
+                            erro = True
+                    else:
+                        erro = True
+                remove(zfile_target)
+
+                header = self.getHeader(target_file[:-1] + 'O')
+                i += 1
+                header['ID'] = i
+                header['FLAG'] = 'B'
+                header['PLATE'] = self.tectonic_plate_base
+                self.headers.append(header)
+            else:
+                bases_ok.remove(base)
+
+        if not bases_ok: raise Exception('Nenhum arquivo de base encontrado')
+
+        return True
 
 #-------------------------------------------------------------------------------
 
@@ -456,13 +563,17 @@ class ApiBernese:
             # limpa a pasta da campanha antes de iniciar o processamento
             self.clearCampaign()
 
-            #Salva arquivo rinex em DATAPOOL
+            # Download dos arquivos de base da RBMC
+            if self.prcType == 'rede':
+                self.getRBMC()
+
+            # Salva arquivo rinex em DATAPOOL
             if not self.getRinex():
                 msg = 'Erro ao salvar o arquivo RINEX no servidor'
                 log(msg)
                 raise Exception(msg)
 
-            #Salva arquivo BLQ em DATAPOOL
+            # Salva arquivo BLQ em DATAPOOL
             if not self.getBlq():
                 msg = 'Erro ao salvar o arquivo BLQ no servidor'
                 log(msg)
@@ -499,7 +610,7 @@ class ApiBernese:
 
             if self.prcType == 'ppp':
                 arg += 'E:\\Sistema\\pppdemo_pcs.pl '
-            elif self.prcType == 'relativo':
+            elif self.prcType in ['relativo','rede']:
                 arg += 'E:\\Sistema\\rltufv_pcs.pl '
             else:
                 raise Exception('prcType not defined in ApiBernese')
@@ -586,9 +697,9 @@ class ApiBernese:
 
             if self.coord_result:
                 msg += 'Estação: ' + self.coord_result[0] + '\n'
-                msg += 'Coordenadas Estimadas (X Y Z):'
+                msg += 'Coordenadas Estimadas (X Y Z) (m):'
                 msg += '\t{:.4f}\t{:.4f}\t{:.4f}\n'.format(*self.coord_result[1:4]).replace('.',',')
-                msg += 'Desvios (X Y Z): '
+                msg += 'Desvios (X Y Z) (m): '
                 msg += '\t{:.4f}\t{:.4f}\t{:.4f}\n\n'.format(*self.coord_result[4:7]).replace('.',',')
                 msg += 'Sistema de Referência e Época: '
                 if self.prcType == 'ppp':
@@ -597,6 +708,8 @@ class ApiBernese:
                     msg += '{:4.2f}'.format(date2yearDay(self.dateFile)/365.0)[2:]
                 elif self.prcType == 'relativo':
                     msg += 'O mesmo da coordenada de referência definida na submissão'
+                elif self.prcType == 'rede':
+                    msg += 'SIRGAS2000, 2000.4'
 
 
             self.endFunction(status = True, id = self.proc_id,
@@ -649,7 +762,7 @@ class ApiBernese:
 
     def getResult(self):
 
-        if self.prcType == 'relativo':
+        if self.prcType in ['relativo','rede']:
 
             prcFile = 'RLT' + str(self.dateFile.year)[-2:]
             prcFile += '{:03d}'.format(date2yearDay(self.dateFile)) + '0.PRC'

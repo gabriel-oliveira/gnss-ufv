@@ -55,6 +55,7 @@ INSTALLED_APPS = [
     'bernese.ppp',
     'bernese.relativo',
     'bernese.accounts',
+    'bernese.rede',
 ]
 
 MIDDLEWARE = [
@@ -90,15 +91,7 @@ WSGI_APPLICATION = 'bernese.wsgi.application'
 
 
 # Database
-if TEST_SERVER:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': 'db.sqlite3',
-        }
-    }
-
-elif LINUX_SERVER:
+if LINUX_SERVER:
     DATABASES = {
          'default': {
             'ENGINE': 'django.db.backends.postgresql',
@@ -182,7 +175,7 @@ SERVER_EMAIL = 'gnss.ufv@gmail.com'
 SERVER_NAME = 'GNSS-UFV'
 
 # Tempo limite aguardando um processamento. Em minutos.
-MAX_PROCESSING_TIME = 10
+MAX_PROCESSING_TIME = 30
 
 # AUTH
 LOGIN_URL = 'accounts:login'

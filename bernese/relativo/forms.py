@@ -51,7 +51,7 @@ class simpleRelativo(forms.ModelForm):
 			(r_isOK, r_erroMsg, r_header) = readRinexObs(r_file)
 		else:
 			b_isOK = False
-			b_isOK = False
+			r_isOK = False
 			b_erroMsg = 'Arquivo rinex invalido.'
 			r_erroMsg = ''
 
@@ -74,9 +74,9 @@ class simpleRelativo(forms.ModelForm):
 		# # Verificando o nome das estações
 
 		for header in [r_header, b_header]:
-			if not r_header['MARKER NAME']:
+			if not header['MARKER NAME']:
 				erroMsg = 'Favor definir o nome da estação do arquivo '
-				erroMsg += r_header['RAW_NAME']
+				erroMsg += header['RAW_NAME']
 				raise forms.ValidationError(erroMsg)
 
 		if r_header['MARKER NAME'] == b_header['MARKER NAME']:

@@ -4,7 +4,7 @@ Processos necessário para gerenciar a fila de processamento do Bernese.
 
 from bernese.settings import MAX_PROCESSING_TIME, MEDIA_ROOT
 from bernese.core.mail import send_result_email
-from bernese.core.models import Proc_Request
+from bernese.core.models import Proc_Request, basesRBMC
 from bernese.core.apiBernese import ApiBernese
 from bernese.core.log import log
 from django.utils import timezone
@@ -147,6 +147,19 @@ def _run_next():
                                     proc_details.coord_ref.Z
                                     ]
             context['datum'] = proc_details.coord_ref.datum
+
+        elif proc_waiting.proc_method == 'rede':
+
+            context['rinex_rover_file'] = os.path.join(
+                                            file_root,
+                                            proc_details.rinex_rover_file.name
+                                            )
+            rinex_files_names = proc_details.rinex_rover_file.name
+
+            context['tectonic_plate_base'] = proc_details.tectonic_plate_base
+            context['tectonic_plate_rover'] = proc_details.tectonic_plate_rover
+
+            context['bases_rbmc'] = proc_details.bases_rbmc
 
         else:
 
