@@ -5,13 +5,13 @@ import requests
 from glob import glob
 import threading
 from datetime import datetime
-from os import path, remove, walk, rename
+from os import path, remove, walk, rename, system
 from subprocess import Popen, run, PIPE, DEVNULL
 from bernese.core.berneseFilesTemplate import *
 from bernese.core.rinex import *
 from bernese.settings import (
 DATAPOOL_DIR, SAVEDISK_DIR, CAMPAIGN_DIR, RESULTS_DIR,
-DEBUG, TEST_SERVER, RINEX_UPLOAD_TEMP_DIR,
+DEBUG, TEST_SERVER, RINEX_UPLOAD_TEMP_DIR, DOWNLOAD_EPHEM
 )
 # from bernese.core.mail import send_result_email
 from bernese.core.log import log
@@ -278,9 +278,11 @@ class ApiBernese:
 
     # TODO Se não achar efemérides do CODE pegar do IGS
 
-        # if TEST_SERVER:
-        #     self.datum = 'IGS14'
-        #     return True
+        if TEST_SERVER:
+            self.datum = 'IGS14'
+        
+        if not DOWNLOAD_EPHEM:
+            return True
 
         rnxDate = self.dateFile
 
@@ -330,7 +332,7 @@ class ApiBernese:
                 if not path.isfile(pathFile): # verifica se os arquivos já estão no servidor
                     with urllib.request.urlopen(codURL) as response, open(pathFile, 'wb') as outFile:
                         data = response.read()
-                        if not data: raise('Erro no download de: ' + sFile)
+                        if not data: raise('Erro no download de: ' + sfile)
                         outFile.write(data)
 
                 # status = run('7z x {} -o{} -y'.format(pathFile,target_dir),stdout=PIPE,stderr=PIPE)
@@ -523,7 +525,7 @@ class ApiBernese:
                         extract_file = zfile.extract(rnxD_file_name)
                         target_file = path.join(rinex_datapool_dir, file_name[:-5].upper() + '0.{:02d}D'.format(anoRed))
                         rename(extract_file, target_file)
-                        status = os.system('crx2rnx {}'.format(target_file))
+                        status = system('crx2rnx {}'.format(target_file))
                         if not status:
                             remove(target_file)
                         else:
@@ -624,7 +626,7 @@ class ApiBernese:
 
             arg += ' V_REFINF ' + self.datum
 
-            arg += ' V_PCV I' + self.datum[-2:]
+            # arg += ' V_PCV I' + self.datum[-2:]
 
             if self.hoi_correction:
                 arg += ' V_HOIFIL HOI$YSS+0'
@@ -857,9 +859,10 @@ class ApiBernese:
 
         with ZipFile(resultZipFile, 'x', ZIP_DEFLATED) as rZipFile:
             for dirname, subdirs, files in walk(CAMPAIGN_DIR):
-                rZipFile.write(dirname)
-                for filename in files:
-                    rZipFile.write(path.join(dirname, filename))
+                if dirname[-3:] not in ['RAW','OBS']:
+                    rZipFile.write(dirname)
+                    for filename in files:
+                        rZipFile.write(path.join(dirname, filename))
 
         # Verifica se arquivo está vazio
         if rZipFile.namelist():

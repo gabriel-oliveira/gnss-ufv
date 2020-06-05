@@ -168,7 +168,7 @@ def readRinexObs(rnxFile):
 
     except Exception as e:
 
-        erroMsg = 'Erro ao ler o cabeçalho do arquivo Rinex: ' + rnxFile.name + '. '
+        erroMsg = 'Erro ao ler o cabecalho do arquivo Rinex: ' + rnxFile.name + '. '
         erroMsg += str(e)
 
         log(erroMsg)

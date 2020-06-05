@@ -86,13 +86,6 @@ class simplePPP(ModelForm):
 			super().save(*args, **kwargs)
 
 
-	# TODO: reescrever o save para o caso do zip
-	#       from django.core.files.storage import default_storage
-    #       default_storage.save('teste.txt',file_data['rinex_file'])
-    #       retorna o nome do arquivo salvo 'teste_m0sd0PH.txt'
-	#       nova instacia do models e loop para save model para cada arquivos
-	#       else: super.save()
-
 
 	class Meta:
 		model = Details_PPP

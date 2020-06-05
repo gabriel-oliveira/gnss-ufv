@@ -37,7 +37,6 @@ def register_validator(uidb64,token):
             return False
     else:
         return False
-        # TODO: email para usuario explicando o porque
     return True
 
 
