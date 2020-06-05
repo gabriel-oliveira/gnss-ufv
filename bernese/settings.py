@@ -9,6 +9,7 @@ import os
 DEBUG = True
 TEST_SERVER = True
 LINUX_SERVER = False
+DOWNLOAD_EPHEM = False
 
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)

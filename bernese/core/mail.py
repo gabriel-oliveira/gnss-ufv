@@ -1,7 +1,7 @@
 from django.template.loader import render_to_string
 from django.template.defaultfilters import striptags
 from django.core.mail import EmailMultiAlternatives, send_mail
-from bernese.settings import DEFAULT_FROM_EMAIL, CONTACT_EMAIL, BASE_DIR
+from bernese.settings import DEFAULT_FROM_EMAIL, CONTACT_EMAIL, BASE_DIR, LINUX_SERVER
 from datetime import datetime
 from threading import Thread
 from bernese.core.log import log
@@ -39,6 +39,15 @@ def send_mail_template(subject, template_name, context, recipient_list, pathFile
 
 		return False
 
+def bkp_msg(msg_txt):
+
+	if LINUX_SERVER:
+		with open(BASE_DIR + '/backupMsgContato.txt','a',encoding='ascii', errors='surrogateescape') as f:
+			f.write(msg_txt.encode().decode('ascii','ignore'))
+	else:
+		with open(BASE_DIR + '/backupMsgContato.txt','a') as f:
+			f.write(msg_txt)
+
 
 def enviar_email(name,email,message,mpathFile=''):
 	subject = 'Contato'
@@ -55,14 +64,13 @@ def enviar_email(name,email,message,mpathFile=''):
 	msg_txt += 'Nome: {name}\nE-mail: {email}\nMessage: {message}\n'.format(**context)
 	if mpathFile: msg_txt += mpathFile + '\n'
 
-	with open(BASE_DIR + '/backupMsgContato.txt','a') as f:
-	    print(msg_txt, file=f)
-
+	bkp_msg(msg_txt)
 
 	# Enviando o email em um processamento paralelo
 	Thread(target=send_mail_template,
 		args = (subject, template_name, context, [CONTACT_EMAIL],mpathFile)
 		).start()
+
 
 def send_result_email(to_email,message,mpathFile='',mpathFileName=None):
 	subject = '[GNSS-UFV] Resultado do Processamento'
@@ -83,5 +91,4 @@ def send_result_email(to_email,message,mpathFile='',mpathFileName=None):
 	if not send_mail_template(subject, template_name, context, [to_email], mpathFile, pathFileName=mpathFileName):
 		msg_txt += 'EMAIL NÃO ENVIADO!!!\n'
 
-	with open(BASE_DIR + '/backupMsgContato.txt','a') as f:
-		print(msg_txt, file=f)
+	bkp_msg(msg_txt)

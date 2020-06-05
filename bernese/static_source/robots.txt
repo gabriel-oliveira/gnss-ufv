@@ -1,0 +1,4 @@
+User-agent: *
+Disallow: /
+
+Sitemap: http://gnss.ufv.br/static/sitemap.xml
