@@ -51,13 +51,25 @@
               <li class="list-group-item">
                 <label for="id_base_select_type_0">
                 <input class="list-group" type="radio" name="base_select_type"
-                value="auto" required checked id="id_base_select_type_0">
+                value="auto" required checked id="id_base_select_type_0"
+                onclick="
+                  document.getElementById('id_bases_rbmc_choices_chosen').disabled=true;
+                  document.getElementById('id_bases_rbmc_choices').required=false;
+                  document.getElementById('id_base_select_max_distance').disabled=false;
+                  document.getElementById('id_base_select_max_distance').required=true;"
+                >
                 Automática (RBMC)
               </label>
 
               </li>
               <li class="list-group-item"><label for="id_base_select_type_1">
-                <input type="radio" name="base_select_type" value="manual" disabled=True id="id_base_select_type_1">
+                <input type="radio" name="base_select_type" value="manual" id="id_base_select_type_1"
+                onclick="
+                  document.getElementById('id_bases_rbmc_choices_chosen').disabled=false;
+                  document.getElementById('id_bases_rbmc_choices').required=true;
+                  document.getElementById('id_base_select_max_distance').disabled=true;
+                  document.getElementById('id_base_select_max_distance').required=false;"
+                >
                 Manual</label>
 
               </li>
@@ -148,6 +160,11 @@
             }">
             Enviar
           </button>
+
+        <script src="{% static 'rede/jquery-3.2.1.min.js' %}" type="text/javascript"></script>
+        <script src="{% static 'rede/chosen.jquery.min.js' %}" type="text/javascript"></script>
+        <script src="{% static 'rede/prism.js' %}" type="text/javascript" charset="utf-8"></script>
+        <script src="{% static 'rede/init.js' %}" type="text/javascript" charset="utf-8"></script>
 
       </form>
     </div> <!-- /container -->

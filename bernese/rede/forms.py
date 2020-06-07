@@ -1,5 +1,5 @@
 from django import forms
-from bernese.rede.models import Details_Rede
+from bernese.rede.models import Details_Rede, get_basesRBMC
 from bernese.core.models import basesRBMC
 from bernese.core.utils import is_blq
 from bernese.core.rinex import isRinex, readRinexObs
@@ -61,7 +61,6 @@ class redeRelativo(forms.ModelForm):
 		if not f_isOK:
 			 raise forms.ValidationError(erroMsg)
 
-		self.bases = {}
 		for header in headers:
 			# # Verificando o nome das estações
 			if not header['MARKER NAME']:
@@ -84,7 +83,14 @@ class redeRelativo(forms.ModelForm):
 
 			# Pré-seleção das bases da RBMC (Validação da existencia do arquivo na API do Bernese)
 			bases_names = ''
-			for base in basesRBMC(coord_X,coord_Y,coord_Z,cleaned_data['base_select_max_distance']):
+			self.bases = {}
+			
+			if self.cleaned_data['base_select_type'] == 'auto':
+				bases = basesRBMC(coord_X,coord_Y,coord_Z,cleaned_data['base_select_max_distance'])
+			elif self.cleaned_data['base_select_type'] == 'manual':
+				bases = cleaned_data['bases_rbmc_choices'].replace(" ","").replace("'","").replace('[','').replace(']','').split(',') 
+			
+			for base in bases:
 				if base != header['MARKER NAME']:
 					bases_names += base
 					bases_names += ' '
@@ -93,8 +99,8 @@ class redeRelativo(forms.ModelForm):
 				self.bases[header['RAW_NAME']] = bases_names
 			else:
 				raise forms.ValidationError(
-				   'Não foram encontradas bases da RBMC para o arquivo ' + header['RAW_NAME'] +
-				   ' em um raio de {}km'.format(cleaned_data['base_select_max_distance']))
+				'Não foram encontradas bases da RBMC para o arquivo ' + header['RAW_NAME'] +
+				' em um raio de {}km'.format(cleaned_data['base_select_max_distance']))
 
 
 	def save(self, *args, **kwargs):
@@ -199,15 +205,20 @@ class redeRelativo(forms.ModelForm):
 	class Meta:
 		model = Details_Rede
 		fields = (
-			'email', 'rinex_rover_file', 'base_select_type', 'base_select_max_distance',
-			'tectonic_plate_base', 'tectonic_plate_rover', 'blq_file', 'hoi_correction',
-			'coord_ref_type', #'coord_ref'
+			'email', 'rinex_rover_file', 'base_select_type', 'base_select_max_distance', 
+			'bases_rbmc_choices', 'tectonic_plate_base', 'tectonic_plate_rover',
+			'blq_file', 'hoi_correction', 'coord_ref_type', #'coord_ref'
 			)
 		widgets = {
 			'email': forms.EmailInput(attrs={'class': 'form-control'}),
 			'rinex_rover_file': forms.ClearableFileInput(attrs={'class': 'form-control'}),
 			'base_select_type': forms.RadioSelect(attrs={'class': 'list-group'}),
 			'base_select_max_distance' : forms.NumberInput(attrs={'class': 'form-control'}),
+			'bases_rbmc_choices': forms.SelectMultiple(attrs={
+				'class': 'form-control chosen-select-no-results',
+				'data-placeholder': 'Buscar Estação'},
+				choices=get_basesRBMC(),
+				),
 			'tectonic_plate_base': forms.Select(attrs={'class': 'form-control'}),
 			'tectonic_plate_rover': forms.Select(attrs={'class': 'form-control'}),
 			'blq_file': forms.ClearableFileInput(attrs={'class': 'form-control'}),
@@ -219,6 +230,7 @@ class redeRelativo(forms.ModelForm):
 			'rinex_rover_file' : 'Arquivo Rinex de Observação do ROVER',
 			'base_select_type': 'Seleção das estações de referência (BASE)',
 			'base_select_max_distance' : 'Raio máximo de distância para seleção das BASES (KM)',
+			'bases_rbmc_choices': 'Selecione as estações de referência da RBMC',
 			'tectonic_plate_base' : 'Selecione a placa tectônica das estações BASE',
 			'tectonic_plate_rover' : 'Selecione a placa tectônica das estações ROVER',
 			'blq_file' : 'Arquivo BLQ (Ocean Tide Loading)',
