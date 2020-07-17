@@ -5,7 +5,6 @@ from django.http import HttpResponse
 from datetime import datetime
 import threading
 from bernese.core.rinex import date2gpsWeek
-from urllib.request import urlopen
 from bernese.settings import LINUX_SERVER, TEST_SERVER
 from bernese.core.process_line import check_line
 import requests
@@ -41,26 +40,25 @@ def tools(request):
 			else:
 				anoRed = rnxDate.year - 1900
 
-			sClkFile = 'ftp://ftp.aiub.unibe.ch/CODE/{:04d}/COD{}.CLK.Z'.format(rnxDate.year,weekDay)
-			sEphFile = 'ftp://ftp.aiub.unibe.ch/CODE/{:04d}/COD{}.EPH.Z'.format(rnxDate.year,weekDay)
-			sIonFile = 'ftp://ftp.aiub.unibe.ch/CODE/{:04d}/COD{}.ION.Z'.format(rnxDate.year,weekDay)
-			sErpFile = 'ftp://ftp.aiub.unibe.ch/CODE/{:04d}/COD{}.ERP.Z'.format(rnxDate.year,weekDay)
-			sErpWFile = 'ftp://ftp.aiub.unibe.ch/CODE/{:04d}/COD{}7.ERP.Z'.format(rnxDate.year,weekDay[:4])
-			sP1C1File = 'ftp://ftp.aiub.unibe.ch/CODE/{:04d}/P1C1{:02d}{:02d}.DCB.Z'.format(rnxDate.year,anoRed,rnxDate.month)
-			sP1P2File = 'ftp://ftp.aiub.unibe.ch/CODE/{:04d}/P1P2{:02d}{:02d}.DCB.Z'.format(rnxDate.year,anoRed,rnxDate.month)
+			sClkFile = 'http://ftp.aiub.unibe.ch/CODE/{:04d}/COD{}.CLK.Z'.format(rnxDate.year,weekDay)
+			sEphFile = 'http://ftp.aiub.unibe.ch/CODE/{:04d}/COD{}.EPH.Z'.format(rnxDate.year,weekDay)
+			sIonFile = 'http://ftp.aiub.unibe.ch/CODE/{:04d}/COD{}.ION.Z'.format(rnxDate.year,weekDay)
+			sErpFile = 'http://ftp.aiub.unibe.ch/CODE/{:04d}/COD{}.ERP.Z'.format(rnxDate.year,weekDay)
+			sErpWFile = 'http://ftp.aiub.unibe.ch/CODE/{:04d}/COD{}7.ERP.Z'.format(rnxDate.year,weekDay[:4])
+			sP1C1File = 'http://ftp.aiub.unibe.ch/CODE/{:04d}/P1C1{:02d}{:02d}.DCB.Z'.format(rnxDate.year,anoRed,rnxDate.month)
+			sP1P2File = 'http://ftp.aiub.unibe.ch/CODE/{:04d}/P1P2{:02d}{:02d}.DCB.Z'.format(rnxDate.year,anoRed,rnxDate.month)
 
-			sfileList = [sClkFile, sEphFile, sIonFile, sErpFile, sErpWFile, sP1C1File, sP1P2File]
+			sfileList = [sClkFile, sEphFile, sErpFile, sErpWFile, sIonFile, sP1C1File, sP1P2File]
 
 			# Verifica se o arquivo existe, se não existir remove da lista
 			for sfile in sfileList:
-				try:
-					with urlopen(sfile) as l:
-						pass                   # Url valida
-				except:
+				link_file = requests.head(sfile)
+				if link_file.status_code != 200:
 					i = sfileList.index(sfile)
-					sfileList[i] = ''          # Url invalida
+					sfileList[i] = ''          # Remove url invalida da lista
 
-			context['fileList'] = sfileList
+			context['codfilelist'] = sfileList[:4]
+			context['bswfilelist'] = sfileList[4:]
 
 	else:
 		form = BerneseTools()

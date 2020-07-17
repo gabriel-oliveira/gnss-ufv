@@ -41,8 +41,12 @@
         </form>
 
       </div>
-
-      {% for file in fileList %}
+      COD:
+      {% for file in codfilelist %}
+      <h4><a href = "{{ file }}" >{{ file }}</a></h4>
+      {% endfor %}
+      BSW52:
+      {% for file in bswfilelist %}
       <h4><a href = "{{ file }}" >{{ file }}</a></h4>
       {% endfor %}
 
