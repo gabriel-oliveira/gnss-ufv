@@ -1,0 +1,16 @@
+FROM ubuntu:18.04
+RUN apt update && apt upgrade -y && apt install perl gfortran nano make qt4-default qt4-dev-tools zlib1g-dev g++ -y 
+WORKDIR /home
+# COPY ./GPSDATA /home/GPSDATA
+COPY ./BERN52/ /home/BERN52/
+COPY ./GPSTEMP /home/GPSTEMP
+COPY ./GPSUSER52 /home/GPSUSER52
+COPY ./RNXCMP /home/RNXCMP
+RUN /bin/bash -c 'mv /home/BERN52/GPS/GEN/CONST /home/BERN52/GPS/GEN/CONST. && \
+                  mv /home/BERN52/GPS/GEN/DATUM /home/BERN52/GPS/GEN/DATUM. && \
+                  mv /home/BERN52/GPS/GEN/EGM2008_SMALL /home/BERN52/GPS/GEN/EGM2008_SMALL. && \
+                  mv /home/BERN52/GPS/GEN/GPSUTC /home/BERN52/GPS/GEN/GPSUTC. && \
+                  mv /home/BERN52/GPS/GEN/IONEX /home/BERN52/GPS/GEN/IONEX. && \
+                  mv /home/BERN52/GPS/GEN/POLOFF /home/BERN52/GPS/GEN/POLOFF. && \
+                  mv /home/BERN52/GPS/GEN/RECEIVER /home/BERN52/GPS/GEN/RECEIVER. && \
+                  mv /home/BERN52/GPS/GEN/SINEX /home/BERN52/GPS/GEN/SINEX.'

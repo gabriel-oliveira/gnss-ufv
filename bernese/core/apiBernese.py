@@ -5,17 +5,17 @@ import requests
 from glob import glob
 import threading
 from datetime import datetime
-from os import path, remove, walk, rename, system
+from os import path, remove, walk, rename, system, stat, makedirs, name as osname
 from subprocess import Popen, run, PIPE, DEVNULL
 from bernese.core.berneseFilesTemplate import *
 from bernese.core.rinex import *
-from bernese.settings import (
-DATAPOOL_DIR, SAVEDISK_DIR, CAMPAIGN_DIR, RESULTS_DIR,
-DEBUG, TEST_SERVER, RINEX_UPLOAD_TEMP_DIR, DOWNLOAD_EPHEM
+from bernese.settings import ( MAX_PROCESSING_TIME,
+DEBUG, RINEX_UPLOAD_TEMP_DIR, DOWNLOAD_EPHEM
 )
 # from bernese.core.mail import send_result_email
 from bernese.core.log import log
 from zipfile import ZipFile, ZIP_DEFLATED
+from shutil import copyfile, rmtree
 
 #-------------------------------------------------------------------------------
 # TODO: transformar logs em raises???
@@ -29,8 +29,16 @@ class ApiBernese:
 
     #def __init__(self, bpeName, rheaders, remail, pathTempFiles,pathBlqTempFiles):
     def __init__(self, **kwargs):
+        
+        if osname == 'nt':
+            self.osname = 'WINDOWS'
+        else:
+            self.osname = 'LINUX'
 
         self.setBpeID()
+
+        self.makeGPSDATA_dirs()
+
         if 'proc_id' in kwargs:
             self.proc_id = kwargs['proc_id']
         else:
@@ -49,13 +57,14 @@ class ApiBernese:
         if 'datum' in kwargs: self.datum = kwargs['datum']
 
         # TODO: rever a eficiencia disto
-        # if 'endFunction' in kwargs:
-
-        end_f = kwargs['endFunction']
+        if 'endFunction' in kwargs:
+            end_f = kwargs['endFunction']
 
         def newend_f(**kwargs):
             try:
                 end_f(**kwargs)
+                if not DEBUG:
+                    rmtree(kwargs['BASE_DIR'], ignore_errors=True)
             except Exception as e:
                 log('Erro ao rodar endFunction')
                 log(str(e))
@@ -168,6 +177,51 @@ class ApiBernese:
 
 #-------------------------------------------------------------------------------
 
+    def makeGPSDATA_dirs(self):
+
+        self.GLOBAL_DIR = path.dirname(path.dirname(path.dirname(path.abspath(__file__))))
+        self.BASE_DIR = path.join(self.GLOBAL_DIR,'TEMP',self.bpeName)
+        self.GPSDATA_DIR = path.join(self.BASE_DIR, 'GPSDATA')
+        self.DATAPOOL_DIR = path.join(self.GPSDATA_DIR, 'DATAPOOL')
+        self.SAVEDISK_DIR = path.join(self.GPSDATA_DIR, 'SAVEDISK')
+        self.CAMPAIGN_DIR = path.join(self.GPSDATA_DIR, 'CAMPAIGN52', 'SYSTEM')
+        self.RESULTS_DIR = path.join(self.GLOBAL_DIR, 'RESULTADOS')
+
+        # SAVEDISK
+        makedirs(self.SAVEDISK_DIR)
+
+        # DATAPOOL
+        makedirs(path.join(self.DATAPOOL_DIR,'BSW52'))
+        makedirs(path.join(self.DATAPOOL_DIR,'COD'))
+        makedirs(path.join(self.DATAPOOL_DIR,'COM'))
+        makedirs(path.join(self.DATAPOOL_DIR,'HOURLY'))
+        makedirs(path.join(self.DATAPOOL_DIR,'IGS'))
+        makedirs(path.join(self.DATAPOOL_DIR,'LEO'))
+        makedirs(path.join(self.DATAPOOL_DIR,'MSC'))
+        makedirs(path.join(self.DATAPOOL_DIR,'REF52'))
+        makedirs(path.join(self.DATAPOOL_DIR,'RINEX'))
+        makedirs(path.join(self.DATAPOOL_DIR,'RINEX3'))
+        makedirs(path.join(self.DATAPOOL_DIR,'SLR_NP'))
+        makedirs(path.join(self.DATAPOOL_DIR,'STAT_LOG'))
+        makedirs(path.join(self.DATAPOOL_DIR,'VMF1'))
+
+        # CAMPAIGN
+        makedirs(path.join(self.CAMPAIGN_DIR,'ATM'))
+        makedirs(path.join(self.CAMPAIGN_DIR,'BPE'))
+        makedirs(path.join(self.CAMPAIGN_DIR,'GRD'))
+        makedirs(path.join(self.CAMPAIGN_DIR,'OBS'))
+        makedirs(path.join(self.CAMPAIGN_DIR,'ORB'))
+        makedirs(path.join(self.CAMPAIGN_DIR,'ORX'))
+        makedirs(path.join(self.CAMPAIGN_DIR,'OUT'))
+        makedirs(path.join(self.CAMPAIGN_DIR,'RAW'))
+        makedirs(path.join(self.CAMPAIGN_DIR,'SOL'))
+        makedirs(path.join(self.CAMPAIGN_DIR,'STA'))
+        with open(path.join(self.CAMPAIGN_DIR,'STA','SESSIONS.SES'),'w') as ses_file:
+            ses_file.write(SES_TEMPLATE_FILE)
+
+
+#-------------------------------------------------------------------------------
+
     def getHeader(self, rnxFile):
         '''
             rnxFile -> caminho completo do arquivo rinex
@@ -205,7 +259,7 @@ class ApiBernese:
                 else:
                     raise Exception('Rinex version ' + str(verRinex))
 
-                new_rinex_path_name = path.join( DATAPOOL_DIR, rinex_dir, setRnxName(self.headers[i]) )
+                new_rinex_path_name = path.join( self.DATAPOOL_DIR, rinex_dir, setRnxName(self.headers[i]) )
 
                 with open(rnxFile,'r') as tmpFile, open( new_rinex_path_name, 'w') as destination:
                     aux = tmpFile.read()
@@ -252,7 +306,7 @@ class ApiBernese:
                 if blqFile:
 
                     with open(blqFile,'r') as tmpFile, open(path.join(
-                         DATAPOOL_DIR,'REF52','SYSTEM.BLQ'),'w') as destination:
+                         self.DATAPOOL_DIR,'REF52','SYSTEM.BLQ'),'w') as destination:
 
                         aux = tmpFile.read()
                         destination.write(aux)
@@ -274,13 +328,23 @@ class ApiBernese:
 
 #-------------------------------------------------------------------------------
 
+    def hasFile(self,pathfile):
+        if path.isfile(pathfile):
+            if stat(pathfile).st_size > 1:
+                return True
+            else:
+                remove(pathfile)
+                return False
+        else:
+            return False
+
+
+#-------------------------------------------------------------------------------
+
     def getEphem(self):
 
     # TODO Se não achar efemérides do CODE pegar do IGS
 
-        if TEST_SERVER:
-            self.datum = 'IGS14'
-        
         if not DOWNLOAD_EPHEM:
             return True
 
@@ -302,11 +366,15 @@ class ApiBernese:
             sP1C1File = 'P1C1{:02d}{:02d}.DCB.Z'.format(anoRed,rnxDate.month)
             sP1P2File = 'P1P2{:02d}{:02d}.DCB.Z'.format(anoRed,rnxDate.month)
 
+            cod_datapool_dir_global = path.join(self.GLOBAL_DIR,'GPSDATA','DATAPOOL','COD')
+            cod_datapool_dir_local = path.join(self.DATAPOOL_DIR,'COD')
+            bsw52_datapool_dir_global = path.join(self.GLOBAL_DIR,'GPSDATA','DATAPOOL','BSW52')
+            bsw52_datapool_dir_local = path.join(self.DATAPOOL_DIR,'BSW52')
 
             # Verifica se existe a efemeride do dia, se não pega a efemeride da semana
             try:
                 with urllib.request.urlopen(
-                'ftp://ftp.aiub.unibe.ch/CODE/{:04d}/{}'.format(
+                'http://ftp.aiub.unibe.ch/CODE/{:04d}/{}'.format(
                                                         rnxDate.year,sErpFile)
                                             ) as f: pass
             except Exception as e:
@@ -317,40 +385,49 @@ class ApiBernese:
             sfileList = [sClkFile, sEphFile, sIonFile, sErpFile, sP1C1File,
                         sP1P2File]
 
-            cod_datapool_dir = path.join(DATAPOOL_DIR,'COD')
-            bsw52_datapool_dir = path.join(DATAPOOL_DIR,'BSW52')
-
             for sfile in sfileList:
 
-                codURL = ('ftp://ftp.aiub.unibe.ch/CODE/{:04d}/{}'.format(rnxDate.year,sfile))
+                codURL = ('http://ftp.aiub.unibe.ch/CODE/{:04d}/{}'.format(rnxDate.year,sfile))
 
-                if sfile in [sIonFile, sP1C1File, sP1P2File]: target_dir = bsw52_datapool_dir
-                else: target_dir = cod_datapool_dir
+                if sfile in [sIonFile, sP1C1File, sP1P2File]:
+                    target_dir_global = bsw52_datapool_dir_global
+                    target_dir_local = bsw52_datapool_dir_local
+                else:
+                    target_dir_global = cod_datapool_dir_global
+                    target_dir_local = cod_datapool_dir_local
 
-                pathFile = path.join(target_dir,sfile)
+                pathFile_global = path.join(target_dir_global,sfile)
+                pathFile_local = path.join(target_dir_local,sfile)
 
-                if not path.isfile(pathFile): # verifica se os arquivos já estão no servidor
-                    with urllib.request.urlopen(codURL) as response, open(pathFile, 'wb') as outFile:
+                if not self.hasFile(pathFile_global): # verifica se os arquivos já estão no servidor
+                    with urllib.request.urlopen(codURL) as response, open(pathFile_global, 'wb') as outFile:
                         data = response.read()
                         if not data: raise('Erro no download de: ' + sfile)
                         outFile.write(data)
 
-                # status = run('7z x {} -o{} -y'.format(pathFile,target_dir),stdout=PIPE,stderr=PIPE)
-                # if status.returncode:
-                #     print('Erro ao descompactar o arquivo: ' + target_dir)
-                #     print(status.stderr)
+                copyfile(pathFile_global,pathFile_local)
 
             # leitura do sistema de referencia das ephemerides
             if not hasattr(self,'datum'):
-                command = '7z x {} -o{} -y'.format(str(path.join(cod_datapool_dir,sEphFile)),cod_datapool_dir)
-                status = run(command,stdout=PIPE,stderr=PIPE)
+                command = '7z x {} -o{} -y'.format(str(path.join(cod_datapool_dir_local,sEphFile)),cod_datapool_dir_local)
+                status = run(command,stdout=PIPE,stderr=PIPE, shell=True)
                 if not status.returncode:
-                    with open(path.join(cod_datapool_dir,sEphFile[:-2]),'r') as f:
+                    with open(path.join(cod_datapool_dir_local,sEphFile[:-2]),'r') as f:
                         self.datum = f.readline().split()[8]
                         log('Datum lido das efemérides: ' + self.datum)
                 else:
                     log('Erro ao ler o datum do arquivo .EPH')
-                    self.datum = 'IGS14'
+                    return False
+
+            ref52_dir_global = path.join(self.GLOBAL_DIR,'GPSDATA','DATAPOOL','REF52')
+            ref52_dir_local = path.join(self.DATAPOOL_DIR,'REF52')
+            
+            copyfile(path.join(ref52_dir_global,'{}_R.CRD'.format(self.datum)),
+                        path.join(ref52_dir_local,'{}_R.CRD'.format(self.datum)))
+            copyfile(path.join(ref52_dir_global,'{}_R.VEL'.format(self.datum)),
+                        path.join(ref52_dir_local,'{}_R.VEL'.format(self.datum)))
+            copyfile(path.join(ref52_dir_global,'{}.FIX'.format(self.datum)),
+                        path.join(ref52_dir_local,'{}.FIX'.format(self.datum)))
 
             return True
 
@@ -401,7 +478,7 @@ class ApiBernese:
 
         campaignName = 'SYSTEM'
 
-        ref52_datapool_dir = path.join(DATAPOOL_DIR,'REF52')
+        ref52_datapool_dir = path.join(self.DATAPOOL_DIR,'REF52')
 
         pPLDfile = path.join(ref52_datapool_dir,campaignName+'.PLD')
         pSTAfile = path.join(ref52_datapool_dir,campaignName+'.STA')
@@ -491,7 +568,7 @@ class ApiBernese:
 
         if self.headers[0]['MARKER NAME'] in bases: bases.remove(self.headers[0]['MARKER NAME'])
 
-        rinex_datapool_dir = path.join(DATAPOOL_DIR,'RINEX')
+        rinex_datapool_dir = path.join(self.DATAPOOL_DIR,'RINEX')
 
         bases_ok = [i for i in bases]
         i = 1
@@ -562,9 +639,6 @@ class ApiBernese:
             # confere se a fila de bpe threadings está liberada
             self.filaBPE()
 
-            # limpa a pasta da campanha antes de iniciar o processamento
-            self.clearCampaign()
-
             # Download dos arquivos de base da RBMC
             if self.prcType == 'rede':
                 self.getRBMC()
@@ -597,23 +671,25 @@ class ApiBernese:
 
                 log(msg)
 
-                # send_result_email(self.email,msg)
-                # self.clearCampaign()
                 self.endFunction(status = False, id = self.proc_id,
-                                msg = msg, result = None)
+                                msg = msg, result = None, BASE_DIR = self.BASE_DIR)
 
                 return False
 
             # Gera os arquivos do bernese com dados da estação
             self.setSTAfiles()
 
-
-            arg = 'E:\\Sistema\\runasit.exe "C:\\Perl64\\bin\\perl.exe '
-
+            arg = 'docker run --network=internal --rm --name {} '.format(self.bpeName)
+            arg += '-v ' + self.GPSDATA_DIR + ':/home/GPSDATA '
+            arg += 'gnssufv:bernese bash -c ' 
+            if self.osname == 'LINUX':
+                arg += "'source /home/BERN52/GPS/EXE/LOADGPS.setvar && perl "
+            else:
+                arg += '"source /home/BERN52/GPS/EXE/LOADGPS.setvar && perl '
             if self.prcType == 'ppp':
-                arg += 'E:\\Sistema\\pppdemo_pcs.pl '
+                arg += '${U}/SCRIPT/pppdemo_pcs.pl '
             elif self.prcType in ['relativo','rede']:
-                arg += 'E:\\Sistema\\rltufv_pcs.pl '
+                arg += '${U}/SCRIPT/rltufv_pcs.pl '
             else:
                 raise Exception('prcType not defined in ApiBernese')
 
@@ -629,12 +705,14 @@ class ApiBernese:
             # arg += ' V_PCV I' + self.datum[-2:]
 
             if self.hoi_correction:
-                arg += ' V_HOIFIL HOI$YSS+0'
+                arg += ' V_HOIFIL HOI\$YSS+0'
 
             # TODO: adicionar outros argumentos aqui
 
-            arg += '"'
-
+            if self.osname == 'LINUX':
+                arg += "'"
+            else:
+                arg += '"'
 
             logMsg = 'Rodando BPE: ' + self.bpeName
             if len(self.headers) > 1: logMsg += ' - Arquivos: '
@@ -643,19 +721,10 @@ class ApiBernese:
                 logMsg += path.basename(rnxHeader['RAW_NAME']) + ' '
             log(logMsg)
 
-            if TEST_SERVER:
-                print(arg)
-                runPCFout = ['Ambiente de teste']
+            runPCFout = ['None']
+            with Popen(arg,stdout=PIPE,stderr=PIPE,stdin=DEVNULL,cwd=self.BASE_DIR,shell=True) as pRun:
+                runPCFout = pRun.communicate()
                 erroBPE = False
-            else:
-                runPCFout = ['None']
-                result = None
-                with Popen(arg,stdout=PIPE,stderr=PIPE,stdin=DEVNULL,cwd='E:\\Sistema') as pRun:
-                    runPCFout = pRun.communicate()
-                    erroBPE = runPCFout[1]
-                    ## Another way
-                    # pRun = run(arg,stderr=PIPE,cwd='E:\\Sistema')
-                    # erroBPE = pRun.stderr
 
         except Exception as e:
             log('Erro ao rodar BPE: ' + self.bpeName)
@@ -672,7 +741,7 @@ class ApiBernese:
 
         if not erroBPE:
 
-            log('BPE: ' + self.bpeName + ' finalizado com sucesso')
+            log('BPE: ' + self.bpeName + ' finalizado')
 
             try:
                 result = self.getResult()
@@ -715,10 +784,9 @@ class ApiBernese:
 
 
             self.endFunction(status = True, id = self.proc_id,
-                            msg = msg, result = result, filename = resultFileName)
-
-            self.clearCampaign()
-
+                            msg = msg, result = result, filename = resultFileName, BASE_DIR = self.BASE_DIR)
+            
+            # Sucessful end runBPE
             return True
 
         else:
@@ -742,20 +810,18 @@ class ApiBernese:
             msg += path.basename(rnxHeader['RAW_NAME']) + ' '
 
         # RUNBPE.pm alterado na linha 881
-        bernErrorFile = path.join(CAMPAIGN_DIR,'RAW','BERN_MSG_ERROR.txt')
+        bernErrorFile = path.join(self.CAMPAIGN_DIR,'RAW','BERN_MSG_ERROR.txt')
 
         if path.isfile(bernErrorFile):
             msg += '. \nDetalhes sobre o erro no arquivo em anexo.'
             # send_result_email(self.email,msg, bernErrorFile)
             self.endFunction(status = False, id = self.proc_id,
-                            msg = msg, result = bernErrorFile)
+                            msg = msg, result = bernErrorFile, filename='ERRO_BERN.txt', BASE_DIR = self.BASE_DIR)
         else:
             msg += '. \nErro desconhecido.'
             # send_result_email(self.email,msg)
             self.endFunction(status = False, id = self.proc_id,
-                            msg = msg, result = result)
-
-        # self.clearCampaign()
+                            msg = msg, result = result, filename='campaign.zip', BASE_DIR = self.BASE_DIR)
 
         return False
 
@@ -768,15 +834,15 @@ class ApiBernese:
 
             prcFile = 'RLT' + str(self.dateFile.year)[-2:]
             prcFile += '{:03d}'.format(date2yearDay(self.dateFile)) + '0.PRC'
-            prcPathFile = path.join(CAMPAIGN_DIR,'OUT',prcFile)
+            prcPathFile = path.join(self.CAMPAIGN_DIR,'OUT',prcFile)
 
             snxFile = 'F1_' + str(self.dateFile.year)[-2:]
             snxFile += '{:03d}'.format(date2yearDay(self.dateFile)) + '0.SNX'
-            snxFilePath = path.join(CAMPAIGN_DIR,'SOL',snxFile)
+            snxFilePath = path.join(self.CAMPAIGN_DIR,'SOL',snxFile)
 
             outFile = 'F1_' + str(self.dateFile.year)[-2:]
             outFile += '{:03d}'.format(date2yearDay(self.dateFile)) + '0.OUT'
-            outFilePath = path.join(CAMPAIGN_DIR,'OUT',outFile)
+            outFilePath = path.join(self.CAMPAIGN_DIR,'OUT',outFile)
 
             resultListFiles = [prcPathFile, snxFilePath, outFilePath]
 
@@ -784,26 +850,26 @@ class ApiBernese:
 
             prcFile = 'PPP' + str(self.dateFile.year)[-2:]
             prcFile += '{:03d}'.format(date2yearDay(self.dateFile)) + '0.PRC'
-            prcPathFile = path.join(CAMPAIGN_DIR,'OUT',prcFile)
+            prcPathFile = path.join(self.CAMPAIGN_DIR,'OUT',prcFile)
 
             snxFile = 'RED' + str(self.dateFile.year)[-2:]
             snxFile += '{:03d}'.format(date2yearDay(self.dateFile)) + '0.SNX'
-            snxFilePath = path.join(CAMPAIGN_DIR,'SOL',snxFile)
+            snxFilePath = path.join(self.CAMPAIGN_DIR,'SOL',snxFile)
 
             outFile = 'RED' + str(self.dateFile.year)[-2:]
             outFile += '{:03d}'.format(date2yearDay(self.dateFile)) + '0.OUT'
-            outFilePath = path.join(CAMPAIGN_DIR,'OUT',outFile)
+            outFilePath = path.join(self.CAMPAIGN_DIR,'OUT',outFile)
 
             kinFile = 'KIN' + '{:03d}'.format(date2yearDay(self.dateFile)) + '0'
             kinFile += self.headers[0]['MARKER NAME'][:4] + '.SUM'
-            kinFilePath = path.join(CAMPAIGN_DIR,'OUT',kinFile)
+            kinFilePath = path.join(self.CAMPAIGN_DIR,'OUT',kinFile)
 
             resultListFiles = [prcPathFile, snxFilePath, outFilePath, kinFilePath]
 
         else:
             return False
 
-        resultZipFile = path.join(RESULTS_DIR,self.bpeName + '.zip')
+        resultZipFile = path.join(self.RESULTS_DIR,self.bpeName + '.zip')
 
         with ZipFile(resultZipFile, 'x', ZIP_DEFLATED) as rZipFile:
             for file in resultListFiles:
@@ -852,13 +918,10 @@ class ApiBernese:
 
     def get_full_result(self):
 
-        if TEST_SERVER:
-            return False
-
-        resultZipFile = path.join(RESULTS_DIR,self.bpeName + 'campaign.zip')
+        resultZipFile = path.join(self.RESULTS_DIR,self.bpeName + 'campaign.zip')
 
         with ZipFile(resultZipFile, 'x', ZIP_DEFLATED) as rZipFile:
-            for dirname, subdirs, files in walk(CAMPAIGN_DIR):
+            for dirname, subdirs, files in walk(self.CAMPAIGN_DIR):
                 if dirname[-3:] not in ['RAW','OBS']:
                     rZipFile.write(dirname)
                     for filename in files:
@@ -871,47 +934,43 @@ class ApiBernese:
             return False
 
 #-------------------------------------------------------------------------------
+# DEPRECATED
+    # def clearCampaign(self):
 
-    def clearCampaign(self):
+    #     log('Clear Campaign Starting')
 
-        # Não roda a função. Evita de limpar os dados para depuração.
-        if TEST_SERVER:
-            return True
+    #     listdir = [
 
-        log('Clear Campaign Starting')
+    #         path.join(self.DATAPOOL_DIR,'RINEX'),
+    #         path.join(self.DATAPOOL_DIR,'RINEX3'),
+    #         # path.join(DATAPOOL_DIR,'BSW52'),
+    #         # path.join(DATAPOOL_DIR,'COD'),
 
-        listdir = [
+    #         path.join(self.CAMPAIGN_DIR,'ATM'),
+    #         path.join(self.CAMPAIGN_DIR,'BPE'),
+    #         path.join(self.CAMPAIGN_DIR,'GRD'),
+    #         path.join(self.CAMPAIGN_DIR,'OBS'),
+    #         path.join(self.CAMPAIGN_DIR,'ORB'),
+    #         path.join(self.CAMPAIGN_DIR,'ORX'),
+    #         path.join(self.CAMPAIGN_DIR,'OUT'),
+    #         path.join(self.CAMPAIGN_DIR,'RAW'),
+    #         path.join(self.CAMPAIGN_DIR,'SOL'),
+    #         path.join(self.CAMPAIGN_DIR,'STA'),
 
-            path.join(DATAPOOL_DIR,'RINEX'),
-            path.join(DATAPOOL_DIR,'RINEX3'),
-            # path.join(DATAPOOL_DIR,'BSW52'),
-            # path.join(DATAPOOL_DIR,'COD'),
+    #     ]
 
-            path.join(CAMPAIGN_DIR,'ATM'),
-            path.join(CAMPAIGN_DIR,'BPE'),
-            path.join(CAMPAIGN_DIR,'GRD'),
-            path.join(CAMPAIGN_DIR,'OBS'),
-            path.join(CAMPAIGN_DIR,'ORB'),
-            path.join(CAMPAIGN_DIR,'ORX'),
-            path.join(CAMPAIGN_DIR,'OUT'),
-            path.join(CAMPAIGN_DIR,'RAW'),
-            path.join(CAMPAIGN_DIR,'SOL'),
-            path.join(CAMPAIGN_DIR,'STA'),
+    #     for dir in listdir:
+    #         files = glob(path.join(dir, '*'))
+    #         for f in files:
+    #             remove(f)
 
-        ]
+    #     with open(path.join(self.CAMPAIGN_DIR,'STA','SESSIONS.SES'),'w') as ses_file:
+    #         ses_file.write(SES_TEMPLATE_FILE)
 
-        for dir in listdir:
-            files = glob(path.join(dir, '*'))
-            for f in files:
-                remove(f)
+    #     for f in glob(path.join(DATAPOOL_DIR,'REF52','SYSTEM.*')):
+    #         remove(f)
 
-        with open(path.join(CAMPAIGN_DIR,'STA','SESSIONS.SES'),'w') as ses_file:
-            ses_file.write(SES_TEMPLATE_FILE)
-
-        for f in glob(path.join(DATAPOOL_DIR,'REF52','SYSTEM.*')):
-            remove(f)
-
-        log('Campaign Cleaned')
+    #     log('Campaign Cleaned')
 
 #-------------------------------------------------------------------------------
 
@@ -932,6 +991,14 @@ class ApiBernese:
         # ordena pelo nome, que esta ligado ao datetime que foi criado
         threadsNames.sort(key=lambda k:k['name'])
 
-        # um de cada vez, como a tia gorda ensinou
-        for tname in threadsNames:
-            threads[tname['id']].join()
+        if len(threadsNames) != 0: # Um processamento por vez
+
+            log('Waiting free threads')
+            
+            for tname in threadsNames:
+
+                threads[tname['id']].join(MAX_PROCESSING_TIME*60) # TODO: float seconds arg time out
+
+                if threads[tname['id']].is_alive():
+                    # TODO: kill docker and remove dir
+                    log('Thread time out')
