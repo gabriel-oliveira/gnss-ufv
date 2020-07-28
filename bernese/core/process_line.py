@@ -2,7 +2,7 @@
 Processos necessário para gerenciar a fila de processamento do Bernese.
 '''
 
-from bernese.settings import MAX_PROCESSING_TIME, MEDIA_ROOT
+from bernese.settings import MAX_PROCESSING_TIME, RINEX_UPLOAD_TEMP_DIR
 from bernese.core.mail import send_result_email
 from bernese.core.models import Proc_Request, basesRBMC
 from bernese.core.apiBernese import ApiBernese
@@ -96,16 +96,12 @@ def _run_next():
         'email' : proc_waiting.email,
         'proc_method' : proc_waiting.proc_method,
         'endFunction' : finishing_process,
-        'linux_server' : proc_waiting.linux_server,
         'hoi_correction' : proc_waiting.hoi_correction,
         }
 
         proc_details = proc_waiting.get_proc_details()
 
-        if proc_waiting.linux_server:
-            file_root = ''
-        else:
-            file_root = MEDIA_ROOT
+        file_root = RINEX_UPLOAD_TEMP_DIR
 
         if proc_details.blq_file:
             context['blq_file'] = os.path.join(
@@ -224,12 +220,4 @@ def finishing_process(**kwargs):
     send_result_email(proc.email,msg,result,filename)
 
     # Verifica se tem outro para processar
-    try:
-        check_url = requests.get('http://bernese.dec.ufv.br/check/')
-        status_code = check_url.status_code
-    except Exception as e:
-        log(str(e))
-        status_code = 0
-    if not status_code == 200:
-        log('check_line: requests check failed')
-        check_line()
+    check_line()

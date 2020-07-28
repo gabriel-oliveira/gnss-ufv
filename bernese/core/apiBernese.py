@@ -43,14 +43,13 @@ class ApiBernese:
             self.proc_id = kwargs['proc_id']
         else:
             self.proc_id = self.bpeName
-        # self.email = kwargs['email']
-        self.linux_server = kwargs['linux_server']
+
         self.hoi_correction = kwargs['hoi_correction']
-        if self.linux_server and kwargs['blq_file']:
-            self.getServerFiles(kwargs['blq_file'])
-            self.pathBlqTempFiles = [path.join(RINEX_UPLOAD_TEMP_DIR,'linux_server',kwargs['blq_file'])]
-        else:
+        
+        if kwargs['blq_file']:
             self.pathBlqTempFiles = [kwargs['blq_file']]
+        else:
+            self.pathBlqTempFiles = []
 
         self.prcType = kwargs['proc_method']
 
@@ -76,11 +75,7 @@ class ApiBernese:
 
         if kwargs['proc_method'] == 'ppp':
 
-            if self.linux_server:
-                self.getServerFiles(kwargs['rinex_file'])
-                self.pathRnxTempFiles = [path.join(RINEX_UPLOAD_TEMP_DIR,'linux_server',kwargs['rinex_file'])]
-            else:
-                self.pathRnxTempFiles = [kwargs['rinex_file']]
+            self.pathRnxTempFiles = [kwargs['rinex_file']]
 
             header = self.getHeader(self.pathRnxTempFiles[0])
             header['ID'] = 1
@@ -92,15 +87,7 @@ class ApiBernese:
 
         elif kwargs['proc_method'] == 'relativo':
 
-            if self.linux_server:
-                self.getServerFiles(kwargs['rinex_base_file'])
-                self.getServerFiles(kwargs['rinex_rover_file'])
-                self.pathRnxTempFiles = [
-                path.join(RINEX_UPLOAD_TEMP_DIR,'linux_server',kwargs['rinex_rover_file']),
-                path.join(RINEX_UPLOAD_TEMP_DIR,'linux_server',kwargs['rinex_base_file']),
-                ]
-            else:
-                self.pathRnxTempFiles = [
+            self.pathRnxTempFiles = [
                                     kwargs['rinex_rover_file'],
                                     kwargs['rinex_base_file']
                                     ]
@@ -120,13 +107,7 @@ class ApiBernese:
 
         elif kwargs['proc_method'] == 'rede':
 
-            if self.linux_server:
-                self.getServerFiles(kwargs['rinex_rover_file'])
-                self.pathRnxTempFiles = [
-                path.join(RINEX_UPLOAD_TEMP_DIR,'linux_server',kwargs['rinex_rover_file']),
-                ]
-            else:
-                self.pathRnxTempFiles = [
+            self.pathRnxTempFiles = [
                                     kwargs['rinex_rover_file']
                                     ]
 
@@ -150,15 +131,6 @@ class ApiBernese:
         mes = int(hDate[1])
         dia = int(hDate[2])
         self.dateFile = datetime(year=ano,month=mes,day=dia)
-
-
-#-------------------------------------------------------------------------------
-    # Download dos arquivos do servidor linux
-    def getServerFiles(self, file):
-        rfile = requests.get('http://gnss.ufv.br/media/' + file)
-        # TODO: se erro 404 raise something
-        with open(path.join(RINEX_UPLOAD_TEMP_DIR,'linux_server',file),'w',newline='\n') as f:
-            f.write(rfile.text)
 
 
 #-------------------------------------------------------------------------------

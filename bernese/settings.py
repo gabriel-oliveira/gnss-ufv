@@ -7,16 +7,16 @@ import os
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
-TEST_SERVER = True
-LINUX_SERVER = False
-DOWNLOAD_EPHEM = False
 
+if os.name == 'nt':
+    LINUX_SERVER = False
+else:
+    LINUX_SERVER = True
+
+DOWNLOAD_EPHEM = True
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/1.11/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
 if LINUX_SERVER:
@@ -27,18 +27,11 @@ else:
 
 ALLOWED_HOSTS = ['*']
 
-if TEST_SERVER:
-    DATAPOOL_DIR = os.path.join(BASE_DIR,'DATAPOOL')
-    SAVEDISK_DIR = os.path.join(BASE_DIR,'SAVEDISK')
-    CAMPAIGN_DIR = os.path.join(BASE_DIR,'CAMPAIGN52','SYSTEM')
-else:
-    DATAPOOL_DIR = 'E:\\Sistema\\GPSDATA\\DATAPOOL\\'
-    SAVEDISK_DIR = 'E:\\Sistema\\GPSDATA\\SAVEDISK\\'
-    CAMPAIGN_DIR = 'E:\\Sistema\\GPSDATA\\CAMPAIGN52\\SYSTEM'
-
+DATAPOOL_DIR = os.path.join(BASE_DIR,'DATAPOOL')
+SAVEDISK_DIR = os.path.join(BASE_DIR,'SAVEDISK')
+CAMPAIGN_DIR = os.path.join(BASE_DIR,'CAMPAIGN52','SYSTEM')
 RESULTS_DIR = os.path.join(BASE_DIR,'RESULTADOS')
 RINEX_UPLOAD_TEMP_DIR = os.path.join(BASE_DIR,'RINEX_UPLOAD_TEMP_DIR')
-
 MEDIA_ROOT = RINEX_UPLOAD_TEMP_DIR
 MEDIA_URL = '/media/'
 
@@ -92,29 +85,16 @@ WSGI_APPLICATION = 'bernese.wsgi.application'
 
 
 # Database
-if LINUX_SERVER:
-    DATABASES = {
-         'default': {
-            'ENGINE': 'django.db.backends.postgresql',
-            'NAME': 'gnss_ufv',
-            'USER': 'sistema',
-            'PASSWORD': os.environ['SYSTEM_MAIL_PASS'],
-            'HOST': '200.235.135.143',
-            'PORT': '5432',
-            }
-    }
-
-else:
-    DATABASES = {
-         'default': {
-            'ENGINE': 'django.db.backends.postgresql',
-            'NAME': 'gnss_ufv',
-            'USER': 'sistema',
-            'PASSWORD': os.environ['SYSTEM_MAIL_PASS'],
-            'HOST': '127.0.0.1',
-            'PORT': '5432',
-            }
-    }
+DATABASES = {
+        'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'gnss_ufv',
+        'USER': 'sistema',
+        'PASSWORD': os.environ['SYSTEM_MAIL_PASS'],
+        'HOST': os.getenv('DATABASE_URL','localhost'),
+        'PORT': '5432',
+        }
+}
 
 
 # Password validation
@@ -159,7 +139,7 @@ STATICFILES_DIRS = [
 ]
 
 # E-mail
-if TEST_SERVER: EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+if DEBUG: EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 else: EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 DEFAULT_FROM_EMAIL = 'GNSS-UFV <gnss.ufv@gmail.com>'
 EMAIL_USE_TLS = True

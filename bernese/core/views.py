@@ -5,7 +5,6 @@ from django.http import HttpResponse
 from datetime import datetime
 import threading
 from bernese.core.rinex import date2gpsWeek
-from bernese.settings import LINUX_SERVER, TEST_SERVER
 from bernese.core.process_line import check_line
 import requests
 import os
@@ -106,23 +105,17 @@ def contact(request):
 	context['isContact'] = True
 	return render(request, template_name, context)
 
+
 def monitor(request):
 
-	if LINUX_SERVER:
-		try:
-			check = requests.get('http://bernese.dec.ufv.br/monitoramento')
-			msg = check.text
-		except:
-			msg = b'Falha na comunicacao com servidor'
-	else:
-		msg = 'Processamentos ativos: ' + str(threading.enumerate())
-		# nproc = 0
-		# for tr in threading.enumerate():
-		# 	# if tr.name[:4] == 'bern':
-		# 	msg += tr.name + ', '
-		# 	nproc += 1
-		#
-		# if not nproc: msg += 'Nenhum'
+	msg = 'Processamentos ativos: '
+	nproc = 0
+	for tr in threading.enumerate():
+		# if tr.name[:4] == 'bern':
+		msg += tr.name + ', '
+		nproc += 1
+	
+	if not nproc: msg += 'Nenhum'
 
 	return HttpResponse(msg)
 
@@ -134,16 +127,9 @@ def custom_error_500_view(request):
 
 
 def check(request):
-
-	if LINUX_SERVER:
-		try:
-			check = requests.get('http://bernese.dec.ufv.br/check')
-		except:
-			pass
-	else:
-		check_line()
-
+	check_line()
 	return process_line_view(request)
+
 
 @login_required
 def process_line_view(request):

@@ -1,7 +1,7 @@
 from django.template.loader import render_to_string
 from django.template.defaultfilters import striptags
 from django.core.mail import EmailMultiAlternatives, send_mail
-from bernese.settings import DEFAULT_FROM_EMAIL, CONTACT_EMAIL, BASE_DIR, LINUX_SERVER
+from bernese.settings import DEFAULT_FROM_EMAIL, CONTACT_EMAIL, BASE_DIR
 from datetime import datetime
 from threading import Thread
 from bernese.core.log import log
@@ -41,12 +41,8 @@ def send_mail_template(subject, template_name, context, recipient_list, pathFile
 
 def bkp_msg(msg_txt):
 
-	if LINUX_SERVER:
-		with open(BASE_DIR + '/backupMsgContato.txt','a',encoding='ascii', errors='surrogateescape') as f:
-			f.write(msg_txt.encode().decode('ascii','ignore'))
-	else:
-		with open(BASE_DIR + '/backupMsgContato.txt','a') as f:
-			f.write(msg_txt)
+	with open(BASE_DIR + '/backupMsgContato.txt','a',encoding='utf-8', errors='surrogateescape') as f:
+		f.write(msg_txt.encode().decode('utf-8','ignore'))
 
 
 def enviar_email(name,email,message,mpathFile=''):
