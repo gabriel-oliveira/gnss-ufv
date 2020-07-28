@@ -1,5 +1,4 @@
 from bernese.core.models import *
-from bernese.settings import LINUX_SERVER
 
 
 def get_basesRBMC():
@@ -18,7 +17,6 @@ class Details_Rede(Proc_Request):
 
     def save(self, *args, **kwargs):
         self.proc_method = 'rede'
-        if LINUX_SERVER: self.linux_server = True
         super().save(*args, **kwargs)
 
     COORD_REF_CHOICES = (
