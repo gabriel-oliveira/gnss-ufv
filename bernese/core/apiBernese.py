@@ -653,7 +653,7 @@ class ApiBernese:
 
             arg = 'docker run --network=internal --rm --name {} '.format(self.bpeName)
             arg += '-v ' + self.GPSDATA_DIR + ':/home/GPSDATA '
-            arg += 'gnssufv:bernese bash -c ' 
+            arg += 'gnssufv/bernese:latest bash -c ' 
             if self.osname == 'LINUX':
                 arg += "'source /home/BERN52/GPS/EXE/LOADGPS.setvar && perl "
             else:

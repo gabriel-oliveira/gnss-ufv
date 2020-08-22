@@ -42,7 +42,7 @@ def check_line():
 
         # Verifica se o servidor está online
         if procs_waiting and is_connected():
-            _run_next()
+            run_next(proc_waiting.pk)
 
     else:
 
@@ -75,21 +75,20 @@ def check_line():
                 # TODO: matar o processamento atual do bernese
 
 
-def _run_next():
+def run_next(proc_pk=False):
     '''
         Roda o proximo processo que estiver aguardando na fila
     '''
 
     log('_run_next: Threadings ' + str(threading.enumerate()))
 
-    proc_waiting = Proc_Request.objects.filter(proc_status='waiting'
-                                                    ).order_by('created_at')[0]
-
-    if not proc_waiting:
+    if not proc_pk:
 
         log('run_next() execultado sem próximo na fila')
 
     else:
+
+        proc_waiting = Proc_Request.objects.get(pk=proc_pk)
 
         context = {
         'proc_id' : proc_waiting.id,
@@ -177,9 +176,12 @@ def _run_next():
             newBPE = ApiBernese(**context)
 
             # Abre nova thread para a iniciar o processamento
-            threading.Thread(name=newBPE.bpeName,target=newBPE.runBPE).start()
+            # threading.Thread(name=newBPE.bpeName,target=newBPE.runBPE).start()
 
             log(str(proc_waiting) + ' started')
+
+            # Inicia o processamento
+            return newBPE.runBPE()
 
         except Exception as e:
 
@@ -220,4 +222,4 @@ def finishing_process(**kwargs):
     send_result_email(proc.email,msg,result,filename)
 
     # Verifica se tem outro para processar
-    check_line()
+    # check_line()

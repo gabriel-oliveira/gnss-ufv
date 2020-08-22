@@ -3,3 +3,5 @@ pytz==2018.4
 psycopg2==2.8.5
 wfastcgi==3.0.0
 requests==2.21.0
+celery==4.4
+django-celery-results==1.2

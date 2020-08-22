@@ -5,6 +5,7 @@ from bernese.core.utils import is_blq
 from bernese.core.rinex import isRinex, readRinexObs
 from zipfile import ZipFile, is_zipfile
 from django.core.files.storage import default_storage
+from bernese.core.tasks import task_run_next
 
 class simplePPP(ModelForm):
 
@@ -80,11 +81,16 @@ class simplePPP(ModelForm):
 						'hoi_correction' : self.cleaned_data['hoi_correction'],
 					}
 					md = Details_PPP(**context)
-					md.save()
+					md.save()         # gera id (primary key)
+					t = task_run_next.delay(md.pk)
+					md.task_id = t.task_id
+					md.save()         # salva task id
 
 		else:
-			super().save(*args, **kwargs)
-
+			p = super().save(*args, **kwargs)  # gera id (primary key)
+			t = task_run_next.delay(p.pk)
+			p.task_id = t.task_id
+			p.save()   # salva task id
 
 
 	class Meta:

@@ -4,7 +4,6 @@ import requests
 from django.shortcuts import redirect
 from django.contrib.auth.decorators import login_required
 import requests
-from bernese.core.process_line import check_line
 
 @login_required
 def index(request):
@@ -21,9 +20,6 @@ def index(request):
 		if form.is_valid():
 
 			form.save()
-
-			# Verifica fila de processamento
-			check_line()
 
 			context['isOK'] = True  # retorno ao usuario de solicitação enviada com sucesso
 			form = simplePPP()      # Novo formulário em branco

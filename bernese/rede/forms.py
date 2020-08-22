@@ -5,6 +5,7 @@ from bernese.core.utils import is_blq
 from bernese.core.rinex import isRinex, readRinexObs
 from zipfile import ZipFile, is_zipfile
 from django.core.files.storage import default_storage
+from bernese.core.tasks import task_run_next
 
 
 class redeRelativo(forms.ModelForm):
@@ -134,11 +135,19 @@ class redeRelativo(forms.ModelForm):
 					}
 					md = Details_Rede(**context)
 					md.save()
+							
+					t = task_run_next.delay(md.pk)  # Envio para o celery
+					md.task_id = t.task_id
+					md.save()                       # salva task id
 
 		else:
 			f = super().save(*args, **kwargs, commit=False)
 			f.bases_rbmc = self.bases[rfile.name]
 			f.save()
+		
+			t = task_run_next.delay(f.pk)  # Envio para o celery
+			f.task_id = t.task_id
+			f.save()                       # salva task id
 
 
 

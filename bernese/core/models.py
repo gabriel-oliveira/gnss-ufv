@@ -25,6 +25,7 @@ class Proc_Request(models.Model):
     started_at = models.DateTimeField('Iniciado em', null=True, blank=True)
     finished_at = models.DateTimeField('Finalizado em',null=True, blank=True)
     hoi_correction = models.BooleanField('Correção da Ionosfera de ordem superior',default=True)
+    task_id = models.CharField('Celery Task',max_length=50,null=True, blank=True)
 
     def __str__(self):
         return 'Process request id (' + str(self.id) + ')'

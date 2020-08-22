@@ -19,9 +19,6 @@ def index(request):
 
 			form.save()
 
-			# Verifica fila de processamento
-			check_line()
-
 			context['isOK'] = True  # retorno ao usuario de solicitação enviada com sucesso
 			form = simpleRelativo() # Novo formulário em branco
 

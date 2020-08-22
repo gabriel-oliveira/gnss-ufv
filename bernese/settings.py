@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     'bernese.relativo',
     'bernese.accounts',
     'bernese.rede',
+    'django_celery_results',
 ]
 
 MIDDLEWARE = [
@@ -163,3 +164,7 @@ LOGIN_URL = 'accounts:login'
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_URL = 'accounts:logout'
 AUTH_USER_MODEL = 'accounts.MyUser'
+
+# CELERY
+CELERY_BROKER_URL = 'amqp://localhost:5672'
+CELERY_RESULT_BACKEND = 'django-db'
