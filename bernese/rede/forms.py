@@ -62,6 +62,8 @@ class redeRelativo(forms.ModelForm):
 		if not f_isOK:
 			 raise forms.ValidationError(erroMsg)
 
+		self.bases = {}
+
 		for header in headers:
 			# # Verificando o nome das estações
 			if not header['MARKER NAME']:
@@ -84,8 +86,6 @@ class redeRelativo(forms.ModelForm):
 
 			# Pré-seleção das bases da RBMC (Validação da existencia do arquivo na API do Bernese)
 			bases_names = ''
-			self.bases = {}
-			
 			if self.cleaned_data['base_select_type'] == 'auto':
 				bases = basesRBMC(coord_X,coord_Y,coord_Z,cleaned_data['base_select_max_distance'])
 			elif self.cleaned_data['base_select_type'] == 'manual':
