@@ -62,6 +62,8 @@ class redeRelativo(forms.ModelForm):
 		if not f_isOK:
 			 raise forms.ValidationError(erroMsg)
 
+		self.bases = {}
+
 		for header in headers:
 			# # Verificando o nome das estações
 			if not header['MARKER NAME']:
@@ -84,8 +86,6 @@ class redeRelativo(forms.ModelForm):
 
 			# Pré-seleção das bases da RBMC (Validação da existencia do arquivo na API do Bernese)
 			bases_names = ''
-			self.bases = {}
-			
 			if self.cleaned_data['base_select_type'] == 'auto':
 				bases = basesRBMC(coord_X,coord_Y,coord_Z,cleaned_data['base_select_max_distance'])
 			elif self.cleaned_data['base_select_type'] == 'manual':
@@ -135,19 +135,13 @@ class redeRelativo(forms.ModelForm):
 					}
 					md = Details_Rede(**context)
 					md.save()
-							
-					t = task_run_next.delay(md.pk)  # Envio para o celery
-					md.task_id = t.task_id
-					md.save()                       # salva task id
+					task_run_next.apply_async(task_id=str(md.pk))# Envio para o celery
 
 		else:
 			f = super().save(*args, **kwargs, commit=False)
 			f.bases_rbmc = self.bases[rfile.name]
 			f.save()
-		
-			t = task_run_next.delay(f.pk)  # Envio para o celery
-			f.task_id = t.task_id
-			f.save()                       # salva task id
+			task_run_next.apply_async(task_id=str(f.pk))  # Envio para o celery
 
 
 

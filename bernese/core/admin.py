@@ -2,28 +2,34 @@ from django.contrib import admin
 from .models import Proc_Request, Coordinates
 from django.utils.html import format_html
 from django_celery_results.models import TaskResult
+from celery.result import AsyncResult
 
 class Proc_Request_Admin(admin.ModelAdmin):
 
-	readonly_fields = ('proc_method','task_id','started_at','finished_at')
+	readonly_fields = ('proc_method','started_at','finished_at')
 	list_display = [
 		'id', 'proc_method', 'proc_status', 'created_at', 'details', 'task'
 	]
 
 	def task(self, obj):
 
-		if obj.task_id:
-			task = TaskResult.objects.get(task_id=obj.task_id)
+		try:
+
+			task = TaskResult.objects.get(task_id=str(obj.id))
 
 			context = {
 				'id' : task.id,
 				'status': task.status,
 			}
-
 			return format_html(
 				'<a href="/controle/django_celery_results/taskresult/{id}/change">{status}</a>',
 				**context,
 			)
+		except Exception:
+
+			task = AsyncResult(str(obj.id))
+
+			return task.status
 
 	def details(self, obj):
 

@@ -1,5 +1,5 @@
 import sys
-# import traceback
+import traceback
 import urllib.request
 import requests
 from glob import glob
@@ -238,8 +238,8 @@ class ApiBernese:
                     destination.write(aux)
 
                 if 'CRINEX VERS   / TYPE' in self.headers[i]:
-                    cmd = 'crx2rnx -f {}'.format(new_rinex_path_name)
-                    status = run(cmd,stdout=PIPE,stderr=PIPE)
+                    cmd = 'CRX2RNX -f {}'.format(new_rinex_path_name)
+                    status = run(cmd,stdout=PIPE,stderr=PIPE,shell=True)
 
                     if status.returncode != 1:
                         remove(new_rinex_path_name)
@@ -567,11 +567,11 @@ class ApiBernese:
 
                 with ZipFile(zfile_target) as zfile:
                     if rnxO_file_name in zfile.namelist():
-                        extract_file = zfile.extract(rnxO_file_name)
+                        extract_file = zfile.extract(rnxO_file_name,path=rinex_datapool_dir)
                         target_file = path.join(rinex_datapool_dir, file_name[:-5].upper() + '0.{:02d}O'.format(anoRed))
                         rename(extract_file, target_file)
                     elif rnxD_file_name in zfile.namelist():
-                        extract_file = zfile.extract(rnxD_file_name)
+                        extract_file = zfile.extract(rnxD_file_name,path=rinex_datapool_dir)
                         target_file = path.join(rinex_datapool_dir, file_name[:-5].upper() + '0.{:02d}D'.format(anoRed))
                         rename(extract_file, target_file)
                         status = system('crx2rnx {}'.format(target_file))
@@ -602,9 +602,7 @@ class ApiBernese:
 
         # TODO: Rever esse método. utilizar o finaly para mandar email deve melhar.
 
-        result = None
-        erroBPE = True
-        runPCFout = []
+        run_stdout, run_stderr = [False, False]
 
         try:
 
@@ -646,22 +644,25 @@ class ApiBernese:
                 self.endFunction(status = False, id = self.proc_id,
                                 msg = msg, result = None, BASE_DIR = self.BASE_DIR)
 
-                return False
+                return [False, '{} Falha no download das efemérides precisas'.format(self.bpeName)]
 
             # Gera os arquivos do bernese com dados da estação
             self.setSTAfiles()
 
-            arg = 'docker run --network=internal --rm --name {} '.format(self.bpeName)
-            arg += '-v ' + self.GPSDATA_DIR + ':/home/GPSDATA '
-            arg += 'gnssufv/bernese:latest bash -c ' 
+            arg = 'docker --host=host.docker.internal run --network=internal --rm --name {} '.format(self.bpeName)
+            arg += '-v gnssufv_temp:/home/TEMP -v gnssufv_log:/home/LOG '
+            arg += '-e BPENAME={} '.format(self.bpeName)
+            arg += 'gnssufv/bernese:latest bash -c '
+
             if self.osname == 'LINUX':
-                arg += "'source /home/BERN52/GPS/EXE/LOADGPS.setvar && perl "
+                arg += "'source /home/BERN52/GPS/EXE/LOADGPS.setvar "
             else:
-                arg += '"source /home/BERN52/GPS/EXE/LOADGPS.setvar && perl '
+                arg += '"source /home/BERN52/GPS/EXE/LOADGPS.setvar '
+
             if self.prcType == 'ppp':
-                arg += '${U}/SCRIPT/pppdemo_pcs.pl '
+                arg += '&& perl ${U}/SCRIPT/pppdemo_pcs.pl '
             elif self.prcType in ['relativo','rede']:
-                arg += '${U}/SCRIPT/rltufv_pcs.pl '
+                arg += '&& perl ${U}/SCRIPT/rltufv_pcs.pl '
             else:
                 raise Exception('prcType not defined in ApiBernese')
 
@@ -693,10 +694,8 @@ class ApiBernese:
                 logMsg += path.basename(rnxHeader['RAW_NAME']) + ' '
             log(logMsg)
 
-            runPCFout = ['None']
             with Popen(arg,stdout=PIPE,stderr=PIPE,stdin=DEVNULL,cwd=self.BASE_DIR,shell=True) as pRun:
-                runPCFout = pRun.communicate()
-                erroBPE = False
+                run_stdout, run_stderr = pRun.communicate()
 
         except Exception as e:
             log('Erro ao rodar BPE: ' + self.bpeName)
@@ -704,21 +703,20 @@ class ApiBernese:
             erroMsg = sys.exc_info()
             log(str(erroMsg[0]))
             log(str(erroMsg[1]))
-            # for tb in traceback.format_exc(erroMsg[2]): log(tb)
-            erroBPE = True
-            result = None
+            for tb in traceback.format_exc(erroMsg[2]): log(tb)
 
-        # log('BPE: ' + self.bpeName + ' finalizado')
+        log('BPE: ' + self.bpeName + ' finalizado')
+        
+        if run_stderr:
 
+            result = False
 
-        if not erroBPE:
-
-            log('BPE: ' + self.bpeName + ' finalizado')
+        else:
 
             try:
                 result = self.getResult()
             except Exception as e:
-                result = None
+                result = False
                 log('Erro ao pegar o resultado da BPE: ' + self.bpeName)
                 log(str(e))
                 erroMsg = sys.exc_info()
@@ -759,7 +757,7 @@ class ApiBernese:
                             msg = msg, result = result, filename = resultFileName, BASE_DIR = self.BASE_DIR)
             
             # Sucessful end runBPE
-            return True
+            return [True, 'Finalizado com sucesso']
 
         else:
             log('Arquivo com resultado do processamento não encontrado. Pegando pasta completa como resultado. ')
@@ -774,7 +772,7 @@ class ApiBernese:
                 log(str(erroMsg[1]))
 
 
-        log('BPE Erro: ' + repr(runPCFout))
+        log('RUNBPE STDOUT: {}\n STDERR: {}'.format(run_stdout.decode(errors='replace'),run_stderr.decode(errors='replace')))
 
         if len(self.headers) > 1: msg = 'Erro no processamento dos arquivos '
         else:  msg = 'Erro no processamento do arquivo '
@@ -795,7 +793,7 @@ class ApiBernese:
             self.endFunction(status = False, id = self.proc_id,
                             msg = msg, result = result, filename='campaign.zip', BASE_DIR = self.BASE_DIR)
 
-        return False
+        return [False, 'Erro no processamento do {}. Resultado: {}'.format(self.bpeName, str(result))]
 
 
 #-------------------------------------------------------------------------------

@@ -82,15 +82,11 @@ class simplePPP(ModelForm):
 					}
 					md = Details_PPP(**context)
 					md.save()         # gera id (primary key)
-					t = task_run_next.delay(md.pk)
-					md.task_id = t.task_id
-					md.save()         # salva task id
+					task_run_next.apply_async(task_id=str(md.pk))  # Envio para o celery
 
 		else:
 			p = super().save(*args, **kwargs)  # gera id (primary key)
-			t = task_run_next.delay(p.pk)
-			p.task_id = t.task_id
-			p.save()   # salva task id
+			task_run_next.apply_async(task_id=str(p.pk))  # Envio para o celery
 
 
 	class Meta:

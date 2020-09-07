@@ -89,10 +89,10 @@ WSGI_APPLICATION = 'bernese.wsgi.application'
 DATABASES = {
         'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'gnss_ufv',
-        'USER': 'sistema',
-        'PASSWORD': os.environ['SYSTEM_MAIL_PASS'],
-        'HOST': os.getenv('DATABASE_URL','localhost'),
+        'NAME': os.getenv('POSTGRES_DB','public'),
+        'USER': os.getenv('POSTGRES_USER','postgres'),
+        'PASSWORD': os.getenv('POSTGRES_PASSWORD','123456'),
+        'HOST': os.getenv('POSTGRES_HOST','localhost'),
         'PORT': '5432',
         }
 }
@@ -166,5 +166,5 @@ LOGOUT_URL = 'accounts:logout'
 AUTH_USER_MODEL = 'accounts.MyUser'
 
 # CELERY
-CELERY_BROKER_URL = 'amqp://localhost:5672'
+CELERY_BROKER_URL = 'amqp://rabbitmq:5672'
 CELERY_RESULT_BACKEND = 'django-db'
