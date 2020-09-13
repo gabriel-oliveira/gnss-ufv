@@ -9,6 +9,7 @@ class Proc_Request(models.Model):
         ('ppp', 'PPP'),
         ('relativo', 'Relativo'),
         ('rede', 'Rede'),
+        ('rapido', 'Rapido')
     )
 
     STATUS_CHOICES = (
@@ -52,6 +53,9 @@ class Proc_Request(models.Model):
         elif self.proc_method == 'rede':
             from bernese.rede.models import Details_Rede
             return Details_Rede.objects.get(pk=self.id)
+        elif self.proc_method == 'rapido':
+            from bernese.rapido.models import Details_Rapido
+            return Details_Rapido.objects.get(pk=self.id)
         else:
             return None
 

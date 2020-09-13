@@ -85,7 +85,7 @@ class ApiBernese:
 
             self.headers = [header]
 
-        elif kwargs['proc_method'] == 'relativo':
+        elif kwargs['proc_method'] in ['relativo','rapido']:
 
             self.pathRnxTempFiles = [
                                     kwargs['rinex_rover_file'],
@@ -502,7 +502,7 @@ class ApiBernese:
                 f.write(ABB_BODY_TEMPLATE_FILE.format(**header))
 
         # Gerando arquivo BSL (linhas de base)
-        if self.prcType in ['relativo','rede']:
+        if self.prcType in ['relativo','rede','rapido']:
             with open(pBSLfile,'w') as f:
                 for header in self.headers[1:]:
                     context = {
@@ -663,6 +663,8 @@ class ApiBernese:
                 arg += '&& perl ${U}/SCRIPT/pppdemo_pcs.pl '
             elif self.prcType in ['relativo','rede']:
                 arg += '&& perl ${U}/SCRIPT/rltufv_pcs.pl '
+            elif self.prcType == 'rapido':
+                arg += '&& perl ${U}/SCRIPT/rapsta_pcs.pl '
             else:
                 raise Exception('prcType not defined in ApiBernese')
 
@@ -747,7 +749,7 @@ class ApiBernese:
                     msg += self.datum + ' '
                     msg += '{:d}'.format(self.dateFile.year) + ','
                     msg += '{:4.2f}'.format(date2yearDay(self.dateFile)/365.0)[2:]
-                elif self.prcType == 'relativo':
+                elif self.prcType in ['relativo','rapido']:
                     msg += 'O mesmo da coordenada de referência definida na submissão'
                 elif self.prcType == 'rede':
                     msg += 'SIRGAS2000, 2000.4'
@@ -816,6 +818,30 @@ class ApiBernese:
 
             resultListFiles = [prcPathFile, snxFilePath, outFilePath]
 
+        if self.prcType == 'rapido':
+
+            prcFile = 'RLT' + str(self.dateFile.year)[-2:]
+            prcFile += '{:03d}'.format(date2yearDay(self.dateFile)) + '0.PRC'
+            prcPathFile = path.join(self.CAMPAIGN_DIR,'OUT',prcFile)
+
+            snxFile = 'F1_' + str(self.dateFile.year)[-2:]
+            snxFile += '{:03d}'.format(date2yearDay(self.dateFile)) + '0.SNX'
+            snxFilePath = path.join(self.CAMPAIGN_DIR,'SOL',snxFile)
+
+            snxFile2 = 'P1_' + str(self.dateFile.year)[-2:]
+            snxFile2 += '{:03d}'.format(date2yearDay(self.dateFile)) + '0.SNX'
+            snxFilePath2 = path.join(self.CAMPAIGN_DIR,'SOL',snxFile2)
+
+            outFile = 'F1_' + str(self.dateFile.year)[-2:]
+            outFile += '{:03d}'.format(date2yearDay(self.dateFile)) + '0.OUT'
+            outFilePath = path.join(self.CAMPAIGN_DIR,'OUT',outFile)
+
+            outFile2 = 'P1_' + str(self.dateFile.year)[-2:]
+            outFile2 += '{:03d}'.format(date2yearDay(self.dateFile)) + '0.OUT'
+            outFilePath2 = path.join(self.CAMPAIGN_DIR,'OUT',outFile2)
+
+            resultListFiles = [snxFilePath, snxFilePath2, outFilePath, outFilePath2]
+
         elif self.prcType == 'ppp':
 
             prcFile = 'PPP' + str(self.dateFile.year)[-2:]
@@ -850,7 +876,10 @@ class ApiBernese:
 
         # Verifica se arquivo está vazio
         if rZipFile.namelist():
-            self.coord_result  = self.get_coord_result(snxFilePath)
+            if path.isfile(snxFilePath):
+                self.coord_result = self.get_coord_result(snxFilePath)
+            else:
+                self.coord_result = self.get_coord_result(snxFilePath2)
             return resultZipFile
         else:
             return False

@@ -116,7 +116,7 @@ def run_next(proc_pk=False):
 
             rinex_files_names = proc_details.rinex_file.name
 
-        elif proc_waiting.proc_method == 'relativo':
+        elif proc_waiting.proc_method in ['relativo','rapido']:
 
             context['rinex_base_file'] = os.path.join(
                                             file_root,

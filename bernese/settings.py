@@ -19,11 +19,10 @@ DOWNLOAD_EPHEM = True
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # SECURITY WARNING: keep the secret key used in production secret!
-if LINUX_SERVER:
-    SECRET_KEY = os.environ['DJANGO_KEY1'] + '#' + os.environ['DJANGO_KEY2']
-else:
+if 'DJANGO_KEY' in os.environ:
     SECRET_KEY = os.environ['DJANGO_KEY']
-
+else:
+    SECRET_KEY = os.environ['DJANGO_KEY1'] + '#' + os.environ['DJANGO_KEY2']
 
 ALLOWED_HOSTS = ['*']
 
@@ -51,6 +50,7 @@ INSTALLED_APPS = [
     'bernese.accounts',
     'bernese.rede',
     'django_celery_results',
+    'bernese.rapido',
 ]
 
 MIDDLEWARE = [
@@ -89,7 +89,7 @@ WSGI_APPLICATION = 'bernese.wsgi.application'
 DATABASES = {
         'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.getenv('POSTGRES_DB','public'),
+        'NAME': os.getenv('POSTGRES_DB','postgres'),
         'USER': os.getenv('POSTGRES_USER','postgres'),
         'PASSWORD': os.getenv('POSTGRES_PASSWORD','123456'),
         'HOST': os.getenv('POSTGRES_HOST','localhost'),
