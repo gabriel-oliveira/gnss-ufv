@@ -1,3 +1,0 @@
-FROM postgis/postgis:12-3.0
-
-COPY rbmc.sql /docker-entrypoint-initdb.d/rbmc.sql
