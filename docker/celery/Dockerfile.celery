@@ -1,0 +1,38 @@
+FROM python:3.8.5
+
+ENV PYTHONDONTWRITEBYTECODE 1
+ENV PYTHONUNBUFFERED 1
+
+RUN apt update && \
+    apt install --no-install-recommends nano wget p7zip-full postgresql-client -y && \
+    rm -rf /var/lib/apt/lists/*
+
+WORKDIR /usr/src/app
+RUN mkdir LOG && mkdir TEMP && mkdir RESULTADOS && \
+    mkdir -p GPSDATA/DATAPOOL/COD \
+    mkdir -p GPSDATA/DATAPOOL/BSW52 \
+    mkdir -p GPSDATA/DATAPOOL/REF52 \
+    mkdir -p GPSDATA/DATAPOOL/RINEX \
+    mkdir -p GPSDATA/DATAPOOL/RINEX3
+
+# Get IGS/ITRF reference files
+RUN wget -P GPSDATA/DATAPOOL/REF52 ftp://ftp.aiub.unibe.ch/BSWUSER52/STA/I*
+
+ADD https://download.docker.com/linux/static/stable/x86_64/docker-19.03.9.tgz ./docker/
+# COPY docker-19.03.9.tgz ./docker/docker-19.03.9.tgz
+RUN tar xzvf ./docker/docker-19.03.9.tgz && rm ./docker/docker-19.03.9.tgz && mv ./docker/* /usr/bin/
+
+ADD https://terras.gsi.go.jp/ja/crx2rnx/RNXCMP_4.0.8_Linux_x86_64bit.tar.gz ./RNXCMP/
+# COPY RNXCMP_4.0.8_Linux_x86_64bit.tar.gz ./RNXCMP/RNXCMP_4.0.8_Linux_x86_64bit.tar.gz
+RUN tar xzvf ./RNXCMP/RNXCMP_4.0.8_Linux_x86_64bit.tar.gz && rm ./RNXCMP/RNXCMP_4.0.8_Linux_x86_64bit.tar.gz && mv ./RNXCMP_4.0.8_Linux_x86_64bit/bin/* /usr/bin/
+
+COPY requirements.txt ./
+RUN pip install --no-input --no-cache-dir -r requirements.txt
+
+COPY manage.py .
+COPY docker/celery/entrypoint-celery.sh .
+COPY bernese/ bernese
+
+RUN addgroup --system django && adduser --system --no-create-home --ingroup django django 
+RUN chown -R django:django /usr/src/app
+USER django
