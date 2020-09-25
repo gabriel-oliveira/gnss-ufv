@@ -34,5 +34,5 @@ COPY docker/celery/entrypoint-celery.sh .
 COPY bernese/ bernese
 
 RUN addgroup --system django && adduser --system --no-create-home --ingroup django django 
-RUN chown -R django:django /usr/src/app
+RUN chown -R django:django /usr/src/app && chmod +x entrypoint-celery.sh
 USER django

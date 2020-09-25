@@ -24,8 +24,8 @@ if 'DJANGO_KEY' in os.environ:
 else:
     SECRET_KEY = os.environ['DJANGO_KEY1'] + '#' + os.environ['DJANGO_KEY2']
 
-
-ALLOWED_HOSTS = ['localhost','gnss.ufv.br']
+HOST = os.getenv('HOST','localhost')
+ALLOWED_HOSTS = [HOST]
 
 DATAPOOL_DIR = os.path.join(BASE_DIR,'DATAPOOL')
 SAVEDISK_DIR = os.path.join(BASE_DIR,'SAVEDISK')
