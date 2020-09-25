@@ -24,8 +24,8 @@ if 'DJANGO_KEY' in os.environ:
 else:
     SECRET_KEY = os.environ['DJANGO_KEY1'] + '#' + os.environ['DJANGO_KEY2']
 
-HOST = os.getenv('HOST','localhost')
-ALLOWED_HOSTS = [HOST]
+HOST = os.getenv('HOST','host.docker.internal')
+ALLOWED_HOSTS = ['localhost','gnss.ufv.br',HOST]
 
 DATAPOOL_DIR = os.path.join(BASE_DIR,'DATAPOOL')
 SAVEDISK_DIR = os.path.join(BASE_DIR,'SAVEDISK')
