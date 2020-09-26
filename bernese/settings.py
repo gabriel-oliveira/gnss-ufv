@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     'bernese.accounts',
     'bernese.rede',
     'django_celery_results',
+    'bernese.rapido',
 ]
 
 MIDDLEWARE = [
@@ -89,7 +90,7 @@ WSGI_APPLICATION = 'bernese.wsgi.application'
 DATABASES = {
         'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.getenv('POSTGRES_DB','public'),
+        'NAME': os.getenv('POSTGRES_DB','postgres'),
         'USER': os.getenv('POSTGRES_USER','postgres'),
         'PASSWORD': os.getenv('POSTGRES_PASSWORD','123456'),
         'HOST': os.getenv('POSTGRES_HOST','localhost'),
