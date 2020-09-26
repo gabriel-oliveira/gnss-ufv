@@ -7,3 +7,4 @@ def task_run_next(self):
     status, result = run_next(int(self.request.id))
     if not status:
         raise Exception(result)
+        

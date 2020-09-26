@@ -1,5 +1,4 @@
 #!/bin/sh
-# wait-for-postgres.sh
 
 set -e
 
@@ -10,14 +9,15 @@ until PGPASSWORD=$POSTGRES_PASSWORD psql -h "$POSTGRES_HOST" -U $POSTGRES_USER -
   sleep 3
 done
 
->&2 echo "Postgres is up"
-
-if [ "$3" = "runserver" ]; then
 >&2 echo "Running migration"
 python manage.py makemigrations
-python manage.py migrate
-python createsuperuser.py
-fi
+python manage.py migrate --noinput
 
->&2 echo "Running server"
+# Manage static files
+python manage.py collectstatic --noinput
+
+# Creating superuser
+python createsuperuser.py
+
+# Running server
 exec $cmd

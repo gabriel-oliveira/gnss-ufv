@@ -8,7 +8,7 @@ from django.urls import reverse
 def send_newuser_mail(email, request):
     user = MyUser.objects.get(email=email)
     token = TokenGenerator.make_token(user)
-    uidb64 = urlsafe_base64_encode(str(user.pk).encode()).decode()
+    uidb64 = urlsafe_base64_encode(str(user.pk).encode())
     url = reverse('accounts:register_validator', kwargs={'uidb64': uidb64, 'token': token})
     mensagem = '''
     E-mail: {}

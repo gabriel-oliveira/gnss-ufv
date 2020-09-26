@@ -10,7 +10,7 @@ from subprocess import Popen, run, PIPE, DEVNULL
 from bernese.core.berneseFilesTemplate import *
 from bernese.core.rinex import *
 from bernese.settings import ( MAX_PROCESSING_TIME,
-DEBUG, RINEX_UPLOAD_TEMP_DIR, DOWNLOAD_EPHEM
+DEBUG, RINEX_UPLOAD_TEMP_DIR, DOWNLOAD_EPHEM, HOST
 )
 # from bernese.core.mail import send_result_email
 from bernese.core.log import log
@@ -649,7 +649,12 @@ class ApiBernese:
             # Gera os arquivos do bernese com dados da estação
             self.setSTAfiles()
 
-            arg = 'docker --host=host.docker.internal run --network=internal --rm --name {} '.format(self.bpeName)
+            if self.osname == 'LINUX':
+                host = HOST
+            else:
+                host = 'host.docker.internal'
+
+            arg = 'docker --host={} run --network=internal --rm --name {} '.format(host,self.bpeName)
             arg += '-v gnssufv_temp:/home/TEMP -v gnssufv_log:/home/LOG '
             arg += '-e BPENAME={} '.format(self.bpeName)
             arg += 'gnssufv/bernese:latest bash -c '

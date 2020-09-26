@@ -18,11 +18,11 @@
     <!-- Bootstrap theme -->
     <link href="{% static 'home/dist/css/bootstrap-theme.min.css' %}" rel="stylesheet">
     <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
-    <link href="{% static 'home/assets/css/ie10-viewport-bug-workaround.css' %}" rel="stylesheet">
+    {% comment %} <link href="{% static 'home/assets/css/ie10-viewport-bug-workaround.css' %}" rel="stylesheet"> {% endcomment %}
 
     <!-- Just for debugging purposes. Don't actually copy these 2 lines! -->
     <!--[if lt IE 9]><script src="{% static 'assets/js/ie8-responsive-file-warning.js' %}"></script><![endif]-->
-    <script src="{% static 'home/assets/js/ie-emulation-modes-warning.js' %}"></script>
+    {% comment %} <script src="{% static 'home/assets/js/ie-emulation-modes-warning.js' %}"></script> {% endcomment %}
 
     <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
     <!--[if lt IE 9]>
@@ -31,7 +31,7 @@
     <![endif]-->
 
     {% comment %} CSS para a seleção das estações da RBMC em rede {% endcomment %}
-      <link rel="stylesheet" href="{% static 'rede/chosen.css' %}">
+      <link rel="stylesheet" href="{% static 'chosen/chosen.css' %}">
 
   </head>
 
@@ -111,11 +111,12 @@
     <!-- Bootstrap core JavaScript
     ================================================== -->
     <!-- Placed at the end of the document so the pages load faster -->
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
-    <script src="{% static 'home/assets/js/vendor/jquery.min.js' %}"></script>
+    {% comment %} <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script> {% endcomment %}
+    {% comment %} <script src="{% static 'home/assets/js/vendor/jquery.min.js' %}"></script> {% endcomment %}
+    <script src="{% static 'home/jquery.min.js' %}"></script>
     <script src="{% static 'home/dist/js/bootstrap.min.js' %}"></script>
-    <script src="{% static 'home/assets/js/docs.min.js' %}"></script>
+    {% comment %} <script src="{% static 'home/assets/js/docs.min.js' %}"></script> {% endcomment %}
     <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
-    <script src="{% static 'home/assets/js/ie10-viewport-bug-workaround.js' %}"></script>
+    {% comment %} <script src="{% static 'home/assets/js/ie10-viewport-bug-workaround.js' %}"></script> {% endcomment %}
   </body>
 </html>

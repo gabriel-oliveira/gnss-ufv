@@ -1,8 +1,8 @@
 Django==2.2.15
 pytz==2018.4
 psycopg2==2.8.5
-wfastcgi==3.0.0
 requests==2.21.0
 celery==4.4
 django-celery-results==1.2
-flower==0.9.5
+# flower==0.9.5
+gunicorn==20.0.4
