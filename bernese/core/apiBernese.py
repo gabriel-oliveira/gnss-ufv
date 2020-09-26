@@ -823,7 +823,7 @@ class ApiBernese:
 
             resultListFiles = [prcPathFile, snxFilePath, outFilePath]
 
-        if self.prcType == 'rapido':
+        elif self.prcType == 'rapido':
 
             prcFile = 'RLT' + str(self.dateFile.year)[-2:]
             prcFile += '{:03d}'.format(date2yearDay(self.dateFile)) + '0.PRC'
