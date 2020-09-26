@@ -78,6 +78,17 @@ volumes:
     postgres:
     rinex_upload:
     temp:
+        name: 
+            - 'gnssufv_temp'
     results:
     log:
+        name: 
+            - 'gnssufv_log'
     static:
+
+networks: 
+    internal: 
+        name: 
+            - 'internal'
+        internal: True
+    
