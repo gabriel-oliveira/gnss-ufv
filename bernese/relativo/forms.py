@@ -6,7 +6,6 @@ from bernese.core.models import Coordinates
 from datetime import date
 from bernese.core.tasks import task_run_next
 
-
 class simpleRelativo(forms.ModelForm):
 
 	# Verificando os dados contidos no campo rinex_base_file inserido no formulario
@@ -149,10 +148,7 @@ class simpleRelativo(forms.ModelForm):
 		r_model = super().save(commit = False, *args, **kwargs)
 		r_model.coord_ref = self.save_coord_form()
 		r_model.save()
-		
-		t = task_run_next.delay(r_model.pk)  # Envio para o celery
-		r_model.task_id = t.task_id
-		r_model.save()                 # salva task id
+		task_run_next.apply_async(task_id=str(r_model.pk))  # Envio para o celery
 
 	# TODO: Tranformar em ForeignKey para reference systems do postgis
 	datum = forms.ChoiceField(

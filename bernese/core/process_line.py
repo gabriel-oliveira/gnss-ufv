@@ -8,7 +8,6 @@ from bernese.core.models import Proc_Request, basesRBMC
 from bernese.core.apiBernese import ApiBernese
 from bernese.core.log import log
 from django.utils import timezone
-import threading
 import sys
 import os
 import socket
@@ -30,7 +29,7 @@ def check_line():
         fila
     '''
 
-    log('check_line: Threadings ' + str(threading.enumerate()))
+    log('Checking line')
 
     # Processos sendo execultados
     procs_running = Proc_Request.objects.filter(proc_status='running')
@@ -79,8 +78,6 @@ def run_next(proc_pk=False):
     '''
         Roda o proximo processo que estiver aguardando na fila
     '''
-
-    log('_run_next: Threadings ' + str(threading.enumerate()))
 
     if not proc_pk:
 
@@ -199,9 +196,10 @@ def run_next(proc_pk=False):
                 result = None,
             )
 
-def finishing_process(**kwargs):
+            return False, str(e)
+            
 
-    log('finishing_process: Threadings ' + str(threading.enumerate()))
+def finishing_process(**kwargs):
 
     status = kwargs['status']
     id = kwargs['id']
@@ -211,6 +209,8 @@ def finishing_process(**kwargs):
         filename = kwargs['filename']
     except:
         filename = None
+
+    log('finishing process: {}'.format(id))
 
     # Pegar processo pelo id
     proc = Proc_Request.objects.get(id=id)

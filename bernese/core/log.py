@@ -1,4 +1,4 @@
-from bernese.settings import BASE_DIR
+from bernese.settings import BASE_DIR, DEBUG
 from os import path
 from datetime import datetime
 
@@ -12,3 +12,6 @@ def log(msg):
 
     with open(logfile,'a') as f:
         f.write('Em '+ time_msg + msg + '\n')
+    
+    if DEBUG:
+        print('BERN_LOG: {} '.format(msg))

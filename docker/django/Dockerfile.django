@@ -1,0 +1,45 @@
+FROM python:3.8.5
+
+ENV PYTHONDONTWRITEBYTECODE 1
+ENV PYTHONUNBUFFERED 1
+
+RUN apt update && \
+    apt install --no-install-recommends nano p7zip-full postgresql-client -y && \
+    rm -rf /var/lib/apt/lists/*
+
+WORKDIR /usr/src/app
+RUN mkdir LOG
+RUN mkdir TEMP
+RUN mkdir RINEX_UPLOAD_TEMP_DIR
+
+ADD https://terras.gsi.go.jp/ja/crx2rnx/RNXCMP_4.0.8_Linux_x86_64bit.tar.gz ./RNXCMP/
+# COPY RNXCMP_4.0.8_Linux_x86_64bit.tar.gz ./RNXCMP/RNXCMP_4.0.8_Linux_x86_64bit.tar.gz
+RUN tar xzvf ./RNXCMP/RNXCMP_4.0.8_Linux_x86_64bit.tar.gz && rm ./RNXCMP/RNXCMP_4.0.8_Linux_x86_64bit.tar.gz && cp ./RNXCMP_4.0.8_Linux_x86_64bit/bin/* /usr/bin/
+
+COPY requirements.txt ./
+RUN pip install --no-input --no-cache-dir -r requirements.txt
+
+# Django Project
+COPY manage.py .
+COPY docker/django/entrypoint-django.sh .
+COPY docker/django/createsuperuser.py .
+COPY bernese/ bernese
+
+# Static Files: Bootstrap, Jquery
+ADD https://github.com/twbs/bootstrap/releases/download/v3.4.1/bootstrap-3.4.1-dist.zip ./bernese/static_source/bootstrap-3.4.1-dist.zip
+# COPY bootstrap-3.4.1-dist.zip ./bernese/static_source/bootstrap-3.4.1-dist.zip
+RUN 7z x ./bernese/static_source/bootstrap-3.4.1-dist.zip -o./bernese/static_source/home/dist -y \
+    && mv ./bernese/static_source/home/dist/bootstrap-3.4.1-dist/* ./bernese/static_source/home/dist/ \
+    && rm -r ./bernese/static_source/home/dist/bootstrap-3.4.1-dist \
+    && rm ./bernese/static_source/bootstrap-3.4.1-dist.zip
+ADD https://code.jquery.com/jquery-1.12.4.min.js ./bernese/static_source/home/jquery.min.js
+# COPY ./bernese/static_source/home/jquery-1.12.4.min.js ./bernese/static_source/home/jquery.min.js
+ADD https://github.com/harvesthq/chosen/releases/download/v1.8.7/chosen_v1.8.7.zip ./bernese/static_source/chosen_v1.8.7.zip
+# COPY chosen_v1.8.7.zip ./bernese/static_source/chosen_v1.8.7.zip
+RUN 7z x ./bernese/static_source/chosen_v1.8.7.zip -o./bernese/static_source/chosen -y \
+    && rm ./bernese/static_source/chosen_v1.8.7.zip
+
+RUN addgroup --system django && adduser --system --no-create-home --ingroup django django
+RUN mkdir ./bernese/static
+RUN chown -R django:django /usr/src/app && chmod +x entrypoint-django.sh
+USER django

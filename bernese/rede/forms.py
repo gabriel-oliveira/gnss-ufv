@@ -135,19 +135,13 @@ class redeRelativo(forms.ModelForm):
 					}
 					md = Details_Rede(**context)
 					md.save()
-							
-					t = task_run_next.delay(md.pk)  # Envio para o celery
-					md.task_id = t.task_id
-					md.save()                       # salva task id
+					task_run_next.apply_async(task_id=str(md.pk))# Envio para o celery
 
 		else:
 			f = super().save(*args, **kwargs, commit=False)
 			f.bases_rbmc = self.bases[rfile.name]
 			f.save()
-		
-			t = task_run_next.delay(f.pk)  # Envio para o celery
-			f.task_id = t.task_id
-			f.save()                       # salva task id
+			task_run_next.apply_async(task_id=str(f.pk))  # Envio para o celery
 
 
 

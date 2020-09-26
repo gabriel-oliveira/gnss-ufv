@@ -1,7 +1,7 @@
 from django.template.loader import render_to_string
 from django.template.defaultfilters import striptags
 from django.core.mail import EmailMultiAlternatives, send_mail
-from bernese.settings import DEFAULT_FROM_EMAIL, CONTACT_EMAIL, BASE_DIR
+from bernese.settings import DEFAULT_FROM_EMAIL, CONTACT_EMAIL, BASE_DIR, DEBUG
 from datetime import datetime
 from threading import Thread
 from bernese.core.log import log
@@ -18,7 +18,7 @@ def send_mail_template(subject, template_name, context, recipient_list, pathFile
 	email = EmailMultiAlternatives(subject=subject, body=message_txt, from_email=from_email, to=recipient_list)
 	email.attach_alternative(message_html, "text/html")
 
-	if pathFile:
+	if pathFile and not DEBUG:
 		with open(pathFile,'rb') as rfile:
 			if not pathFileName: pathFileName = rfile.name
 			afile = rfile.read()

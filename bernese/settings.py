@@ -6,7 +6,7 @@ Django settings for bernese project.
 import os
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv('DEBUG',False)
 
 if os.name == 'nt':
     LINUX_SERVER = False
@@ -19,13 +19,13 @@ DOWNLOAD_EPHEM = True
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # SECURITY WARNING: keep the secret key used in production secret!
-if LINUX_SERVER:
-    SECRET_KEY = os.environ['DJANGO_KEY1'] + '#' + os.environ['DJANGO_KEY2']
-else:
+if 'DJANGO_KEY' in os.environ:
     SECRET_KEY = os.environ['DJANGO_KEY']
+else:
+    SECRET_KEY = os.environ['DJANGO_KEY1'] + '#' + os.environ['DJANGO_KEY2']
 
-
-ALLOWED_HOSTS = ['*']
+HOST = os.getenv('HOST','host.docker.internal')
+ALLOWED_HOSTS = ['localhost','gnss.ufv.br',HOST]
 
 DATAPOOL_DIR = os.path.join(BASE_DIR,'DATAPOOL')
 SAVEDISK_DIR = os.path.join(BASE_DIR,'SAVEDISK')
@@ -89,10 +89,10 @@ WSGI_APPLICATION = 'bernese.wsgi.application'
 DATABASES = {
         'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'gnss_ufv',
-        'USER': 'sistema',
-        'PASSWORD': os.environ['SYSTEM_MAIL_PASS'],
-        'HOST': os.getenv('DATABASE_URL','localhost'),
+        'NAME': os.getenv('POSTGRES_DB','public'),
+        'USER': os.getenv('POSTGRES_USER','postgres'),
+        'PASSWORD': os.getenv('POSTGRES_PASSWORD','123456'),
+        'HOST': os.getenv('POSTGRES_HOST','localhost'),
         'PORT': '5432',
         }
 }
@@ -166,5 +166,9 @@ LOGOUT_URL = 'accounts:logout'
 AUTH_USER_MODEL = 'accounts.MyUser'
 
 # CELERY
-CELERY_BROKER_URL = 'amqp://localhost:5672'
+RABBITMQ_DEFAULT_USER = os.getenv('RABBITMQ_DEFAULT_USER','guest')
+RABBITMQ_DEFAULT_PASS = os.getenv('RABBITMQ_DEFAULT_PASS','guest')
+RABBITMQ_DEFAULT_VHOST = os.getenv('RABBITMQ_DEFAULT_VHOST','')
+CELERY_BROKER_URL = 'amqp://{}:{}@rabbitmq:5672/{}'.format(
+    RABBITMQ_DEFAULT_USER, RABBITMQ_DEFAULT_PASS, RABBITMQ_DEFAULT_VHOST )
 CELERY_RESULT_BACKEND = 'django-db'

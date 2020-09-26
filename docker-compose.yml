@@ -1,0 +1,94 @@
+version: "3.8"
+
+services:
+
+    postgres:
+        image: gnssufv/postgis:latest
+        build: 
+            context: ./docker/postgres/
+            dockerfile: Dockerfile.postgis
+        volumes:
+            - postgres:/var/lib/postgresql/data
+        env_file: .env
+
+    django:
+        image: gnssufv/django:latest
+        build: 
+            context: ./
+            dockerfile: ./docker/django/Dockerfile.django
+        entrypoint: [ "./entrypoint-django.sh" ]
+        command: [ "gunicorn", "bernese.wsgi", "--bind", "0.0.0.0:8000" ]
+        env_file: .env
+        volumes: 
+            - static:/usr/src/app/bernese/static
+            - rinex_upload:/usr/src/app/RINEX_UPLOAD_TEMP_DIR
+            - temp:/usr/src/app/TEMP
+            - log:/usr/src/app/LOG
+        depends_on: 
+            - postgres
+
+    rabbitmq:
+        image: rabbitmq:3-alpine
+        hostname: gnssufv-broker
+        # image: rabbitmq:3-management
+        # ports:
+        #     - "15672:15672"
+        env_file: .env
+
+    celery:
+        image: gnssufv/celery:latest
+        build: 
+            context: ./
+            dockerfile: ./docker/celery/Dockerfile.celery
+        entrypoint: [ "./entrypoint-celery.sh" ]
+        command: [ "celery", "-A", "bernese", "worker", "-l", "info" ]
+        depends_on: 
+            - rabbitmq
+        env_file: .env
+        volumes: 
+            - rinex_upload:/usr/src/app/RINEX_UPLOAD_TEMP_DIR
+            - temp:/usr/src/app/TEMP
+            - results:/usr/src/app/RESULTADOS
+            - log:/usr/src/app/LOG
+    
+    nginx:
+        image: gnssufv/nginx:latest
+        build: 
+            context: ./docker/nginx/
+            dockerfile: Dockerfile.nginx
+        ports:
+            - "80:80"
+        volumes:
+            - static:/usr/share/nginx/static
+            - rinex_upload:/usr/share/nginx/RINEX_UPLOAD_TEMP_DIR
+        depends_on: 
+            - django
+
+    # flower:
+    #     image: gnssufv/celery:latest
+    #     entrypoint: [ "./entrypoint-celery.sh" ]
+    #     command: [ "celery", "-A", "bernese", "worker", "-l", "info" ]
+    #     ports: 
+    #         - "5555:5555"
+    #     depends_on: 
+    #         - rabbitmq
+    #     env_file: .env
+
+volumes: 
+    postgres:
+    rinex_upload:
+    temp:
+        name: 
+            - 'gnssufv_temp'
+    results:
+    log:
+        name: 
+            - 'gnssufv_log'
+    static:
+
+networks: 
+    internal: 
+        name: 
+            - 'internal'
+        internal: True
+    
