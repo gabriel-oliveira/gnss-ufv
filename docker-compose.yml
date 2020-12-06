@@ -61,7 +61,7 @@ services:
         volumes:
             - static:/usr/share/nginx/static
             - rinex_upload:/usr/share/nginx/RINEX_UPLOAD_TEMP_DIR
-            - nginx_access:/var/log/nginx/access.log
+            - nginx_access:/var/log/nginx
         depends_on: 
             - django
 
