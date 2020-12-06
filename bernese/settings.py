@@ -19,10 +19,7 @@ DOWNLOAD_EPHEM = True
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # SECURITY WARNING: keep the secret key used in production secret!
-if 'DJANGO_KEY' in os.environ:
-    SECRET_KEY = os.environ['DJANGO_KEY']
-else:
-    SECRET_KEY = os.environ['DJANGO_KEY1'] + '#' + os.environ['DJANGO_KEY2']
+SECRET_KEY = os.environ['DJANGO_KEY1'] + '#' + os.environ['DJANGO_KEY2']
 
 HOST = os.getenv('HOST','host.docker.internal')
 ALLOWED_HOSTS = ['localhost','gnss.ufv.br',HOST]
