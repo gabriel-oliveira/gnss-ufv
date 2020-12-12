@@ -6,7 +6,13 @@ Django settings for bernese project.
 import os
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv('DEBUG',False)
+ENV_DEBUG = os.getenv('DEBUG',False)
+
+if not ENV_DEBUG or ENV_DEBUG == 'False':
+    DEBUG = False
+else:
+    DEBUG = True
+
 
 if os.name == 'nt':
     LINUX_SERVER = False

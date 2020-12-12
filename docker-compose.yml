@@ -84,3 +84,4 @@ volumes:
     log:
         name: gnssufv_log
     static:
+    nginx_log:
