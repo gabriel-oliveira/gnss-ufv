@@ -10,6 +10,7 @@ services:
         volumes:
             - postgres:/var/lib/postgresql/data
         env_file: .env
+        restart: unless-stopped
 
     django:
         image: gnssufv/django:latest
@@ -26,6 +27,7 @@ services:
             - log:/usr/src/app/LOG
         depends_on: 
             - postgres
+        restart: unless-stopped
 
     rabbitmq:
         image: rabbitmq:3-alpine
@@ -34,6 +36,7 @@ services:
         # ports:
         #     - "15672:15672"
         env_file: .env
+        restart: unless-stopped
 
     celery:
         image: gnssufv/celery:latest
@@ -50,6 +53,7 @@ services:
             - temp:/usr/src/app/TEMP
             - results:/usr/src/app/RESULTADOS
             - log:/usr/src/app/LOG
+        restart: unless-stopped
     
     nginx:
         image: gnssufv/nginx:latest
@@ -64,6 +68,7 @@ services:
             - ${NGINX_LOG_DIR}:/var/log/nginx
         depends_on: 
             - django
+        restart: unless-stopped
 
     # flower:
     #     image: gnssufv/celery:latest
