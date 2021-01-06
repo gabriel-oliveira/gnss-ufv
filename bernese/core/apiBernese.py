@@ -574,7 +574,7 @@ class ApiBernese:
                         extract_file = zfile.extract(rnxD_file_name,path=rinex_datapool_dir)
                         target_file = path.join(rinex_datapool_dir, file_name[:-5].upper() + '0.{:02d}D'.format(anoRed))
                         rename(extract_file, target_file)
-                        status = system('crx2rnx {}'.format(target_file))
+                        status = system('CRX2RNX {}'.format(target_file))
                         if not status:
                             remove(target_file)
                         else:
