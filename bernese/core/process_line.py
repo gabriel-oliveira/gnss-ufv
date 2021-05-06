@@ -37,10 +37,10 @@ def check_line():
     if not procs_running:
 
         # Processos aguardando para serem execultados
-        procs_waiting = Proc_Request.objects.filter(proc_status='waiting')
+        proc_waiting = Proc_Request.objects.filter(proc_status='waiting')
 
         # Verifica se o servidor está online
-        if procs_waiting and is_connected():
+        if proc_waiting and is_connected():
             run_next(proc_waiting.pk)
 
     else:
