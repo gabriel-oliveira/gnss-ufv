@@ -581,6 +581,10 @@ class ApiBernese:
                             erro = True
                     else:
                         erro = True
+
+                if erro:
+                    log('Erro no download do arquivo de base da estação {}'.format(rnxO_file_name))
+
                 remove(zfile_target)
 
                 header = self.getHeader(target_file[:-1] + 'O')
