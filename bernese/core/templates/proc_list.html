@@ -1,16 +1,14 @@
 {% extends 'base.html' %}
+{% load hide_email%}
 {% block content %}
 <div class="container theme-showcase" role="main">
-  {% if user.is_admin %}
-  {{ threads }}
-  {% endif %}
-  <h3>Fila de Processamento</h3>
-  {% if proc_run %}
-  Processando ID
+
   {% for pr in proc_run %}
-  {{pr.id}}
+  <h2>Processando solicitação de {{pr.email|hide_email}}, criada em {{pr.created_at}}</h2>
+  {% empty %}
+  <h2>Nenhum processamento ativo</h2>
   {% endfor %}
-  {% endif %}
+
   <nav aria-label="...">
     <ul class="pager">
         {% if procs.has_previous %}
@@ -51,14 +49,12 @@
 <table class='table'>
   <thead>
     <tr>
-      <td>ID</td><td>Status</td><td>E-mail</td><td>Criando em:</td>
-      <td>Iniciado em:</td><td>Finalizado em:</td>
+      <td>Status</td><td>Solicitante</td><td>Data</td>
     </tr>
   </thead>
   <tbody>
 {% for proc in procs %}
 <tr>
-  <td>{{ proc.id }}</td>
   <td>
     {% if proc.proc_status == 'waiting' %}
     Aguardando
@@ -70,26 +66,12 @@
     --
     {% endif %}
   </td>
-  <td>{{ proc.email }}</td>
+  <td>{{ proc.email|hide_email }}</td>
   <td>
     {% if not proc.created_at %}
     --
     {% else %}
     {{ proc.created_at }}
-    {% endif %}
-  </td>
-  <td>
-    {% if not proc.started_at %}
-    --
-    {% else %}
-    {{ proc.started_at }}
-    {% endif %}
-  </td>
-  <td>
-    {% if not proc.finished_at %}
-    --
-    {% else %}
-    {{ proc.finished_at }}
     {% endif %}
   </td>
 </tr>

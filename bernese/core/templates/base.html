@@ -62,7 +62,7 @@
                 <li><a href="{% url 'rapido:index' %}">Estático Rápido</a></li>
               </ul>
             </li>
-            <li {% if isFila %} class="active"{% endif %}><a href="{% url 'core:process_line_view' %}">Fila</a></li>
+            <li {% if isFila %} class="active"{% endif %}><a href="{% url 'core:process_line_view' %}">Status</a></li>
             <li {% if isTools %} class="active"{% endif %}><a href="{% url 'core:tools' %}">Ferramentas</a></li>
             <li {% if isAbout %} class="active"{% endif %}><a href="{% url 'core:about' %}">Sobre</a></li>
             <li {% if isContact %} class="active"{% endif %}><a href="{% url 'core:contact' %}">Contato</a></li>
