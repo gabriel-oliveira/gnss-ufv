@@ -4,9 +4,9 @@
 <div class="container theme-showcase" role="main">
 
   {% for pr in proc_run %}
-  <h2>Processando solicitação de {{pr.email|hide_email}}, criada em {{pr.created_at}}</h2>
+  <b>Processando solicitação de {{pr.email|hide_email}}, criada em {{pr.created_at}}</b>
   {% empty %}
-  <h2>Nenhum processamento ativo</h2>
+  <b>Nenhum processamento ativo</b>
   {% endfor %}
 
   <nav aria-label="...">
