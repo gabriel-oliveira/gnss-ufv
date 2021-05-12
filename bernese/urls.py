@@ -29,7 +29,9 @@ urlpatterns = [
     path('rede/', include('bernese.rede.urls', namespace='rede')),
     path('conta/', include('bernese.accounts.urls', namespace='accounts')),
     path('favicon.ico',RedirectView.as_view(url='/static/favicon.ico', permanent=True)),
-    path('robots.txt',RedirectView.as_view(url='/static/robots.txt',permanent=True))
+    path('robots.txt',RedirectView.as_view(url='/static/robots.txt',permanent=True)),
+    path('apple-touch-icon-precomposed.png',RedirectView.as_view(url='/static/logo-gnss-ufv.png', permanent=True)),
+    path('apple-touch-icon.png',RedirectView.as_view(url='/static/logo-gnss-ufv.png', permanent=True))
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT) + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
 # handler500 = 'bernese.core.views.custom_error_500_view'
