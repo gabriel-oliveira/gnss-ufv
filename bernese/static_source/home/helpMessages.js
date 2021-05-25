@@ -22,7 +22,7 @@ referência para determinar as coordenadas da estação ROVER.</p><p>São aceito
 RINEX 3.x, 2.x e Hatanaka. Nas seguintes extensões: yyO, yyD, OBS, RNX, CRX. (yy = dois últimos dígitos \
 do ano)</p>\
     <p>Para este modo é esperado arquivos de curta duração que não tiveram sucesso no processamento do \
-modo Linha de Base Simples.</p>",
+modo Linha de Base Única.</p>",
     
     rinex_rover_file_rlt_sgl: "<p>Arquivo com observações GNSS no formato RINEX (<i>Receiver INdependent \
 Exchange</i>) da estação com coordenadas a serem determinadas.</p>\
@@ -44,7 +44,7 @@ Exchange</i>) da estação com coordenadas a serem determinadas.</p>\
     <p>São aceitos arquivos no formato RINEX 3.x, 2.x e Hatanaka. Nas seguintes extensões: yyO, yyD, \
 OBS, RNX, CRX. (yy = dois últimos dígitos do ano)</p>\
     <p>Para este modo é esperado arquivos de curta duração que não tiveram sucesso no processamento do \
-modo Linha de Base Simples.</p>",
+modo Linha de Base Única.</p>",
 
     hoi_correction: "<p>Selecione este campo para indicar se quer que seja feita a correção do efeito ionosférico de ordem superior (2ª e 3ª ordens). As correções são feitas utilizando o modelo global da ionosfera fornecido pelo CODE.</p>",
 
