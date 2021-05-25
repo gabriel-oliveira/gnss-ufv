@@ -18,7 +18,24 @@
       </div>
 
       <h2>Posicionamento Relativo Radial</h2>
-      <br>
+
+      <div align="right">
+      <button id="helpCollapse-btn" class="btn btn-default" type="button" data-toggle="collapse" data-target="#helpCollapse" aria-expanded="false" aria-controls="helpCollapse">
+        Descrição<span class="glyphicon glyphicon-question-sign help-icon"> </span>
+      </button>
+      </div>
+
+      <div class="collapse" id="helpCollapse">
+        <div class="well text-justify">
+          <p>Neste modo são utilizadas múltiplas estações de referência (Base) da Rede Brasileira 
+de Monitoramento Continuas dos Sistemas GNSS para determinar as coordenadas de uma única estação Rover.</p>
+          <div align="center" style="margin:20px"><img src="/static/home/radial.png" class="img-responsive" alt="Relativo em Rede Radial" with="320px"></img></div>
+          <p>Para este modo é esperado arquivos com mais de duas horas de rastreio. </p>
+          <p>Arquivos com menos de duas horas que retornarem com erro do processamento, é aconselhado 
+que sejam processados no modo estático rápido.</p>
+        </div>
+      </div>
+
       {% if isOK %}
         <div class="alert alert-info alert-dismissible" role="alert">
           <button type="button" class="close" data-dismiss="alert" aria-label="Close">
@@ -47,6 +64,7 @@
           {% if field.html_name == "base_select_type" %}
 
             <label for="id_base_select_type_0">Seleção das estações de referência (BASE):</label>
+            <a><span class="glyphicon glyphicon-question-sign help-icon" data-helpid="{{ field.html_name }}" data-helptitle="{{ field.label }}" data-toggle="modal" data-target="#helpModal" aria-hidden="true"></a>
             <ul id="id_base_select_type" class="list-group">
               <li class="list-group-item">
                 <label for="id_base_select_type_0">
@@ -60,6 +78,7 @@
                 >
                 Automática (RBMC)
               </label>
+              <a><span class="glyphicon glyphicon-question-sign help-icon" data-helpid="{{ field.html_name }}_auto" data-helptitle="Automática (RBMC)" data-toggle="modal" data-target="#helpModal" aria-hidden="true"></a>
 
               </li>
               <li class="list-group-item"><label for="id_base_select_type_1">
@@ -71,6 +90,7 @@
                   document.getElementById('id_base_select_max_distance').required=false;"
                 >
                 Manual</label>
+                <a><span class="glyphicon glyphicon-question-sign help-icon" data-helpid="{{ field.html_name }}_manual" data-helptitle="Manual" data-toggle="modal" data-target="#helpModal" aria-hidden="true"></a>
 
               </li>
             </ul>
@@ -79,6 +99,7 @@
             {% elif field.html_name == "coord_ref_type" %}
 
               <label for="id_coord_ref_type_0">Coordenadas de referência (BASE):</label>
+              <a><span class="glyphicon glyphicon-question-sign help-icon" data-helpid="{{ field.html_name }}" data-helptitle="{{ field.label }}" data-toggle="modal" data-target="#helpModal" aria-hidden="true"></a>
               <ul id="id_coord_ref_type" class="list-group">
                 <li class="list-group-item">
                   <label for="id_coord_ref_type_0">
@@ -86,6 +107,7 @@
                          value="header_rinex" required checked id="id_coord_ref_type_0">
                   No cabeçalho do arquivo rinex
                 </label>
+                <a><span class="glyphicon glyphicon-question-sign help-icon" data-helpid="{{ field.html_name }}_header_rinex" data-helptitle="No cabeçalho do arquivo rinex" data-toggle="modal" data-target="#helpModal" aria-hidden="true"></a>
 
                 </li>
                 <li class="list-group-item">
@@ -94,6 +116,7 @@
                          disabled=True id="id_coord_ref_type_1">
                   Inserir manualmente
                 </label>
+                <a><span class="glyphicon glyphicon-question-sign help-icon" data-helpid="{{ field.html_name }}_user_set" data-helptitle="Inserir manualmente" data-toggle="modal" data-target="#helpModal" aria-hidden="true"></a>
 
                 </li>
               </ul>
@@ -102,13 +125,14 @@
           <!-- campos criados manualmente no final do looping -->
           {% else %}
             {{ field.label_tag }}
-            {{ field }}
+            
+              {% if field.html_name != "email" %}
+                <a>
+                <span class="glyphicon glyphicon-question-sign help-icon" data-helpid="{{ field.html_name }}" data-helptitle="{{ field.label }}" data-toggle="modal" data-target="#helpModal" aria-hidden="true">
+                </a>
+              {% endif %}
 
-            {% if field.html_name == "blq_file" %}
-            <p class="help-block">Este arquivo pode ser gerado neste <a href="http://holt.oso.chalmers.se/loading/#select" target="_blank">
-            link</a>. Sugere-se o modelo FES2004. Favor utilizar o cabeçalho deste <a href="{% static 'exemplo.txt' %}" target="_blank">
-            link</a>.</p>
-            {% endif %}
+            {{ field }}
 
           {% endif %}
 
@@ -168,5 +192,22 @@
 
       </form>
     </div> <!-- /container -->
+
+<div class="modal fade" id="helpModal" tabindex="-1" role="dialog" aria-labelledby="helpModalLabel">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <span class="modal-title"></span>
+      </div>
+      <div class="modal-body text-justify">
+        <span id="modal-message"></span>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Fechar</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 {% endblock %}

@@ -46,3 +46,34 @@ body {
 .jumbotron {
   text-align: justify;
 }
+
+.help-icon {
+  color: rgb(0, 0, 0);
+}
+
+.help-icon:hover{
+  color: rgb(121, 29, 31);
+  cursor: help;
+}
+
+.logo{
+  font-family: Asenine;
+  font-weight: bold;
+}
+
+.logo-u{
+  color: rgb(0, 0, 0);
+}
+
+.logo-f{
+  color: rgb(121, 29, 31);
+}
+
+.logo-v{
+  color: rgb(195, 166, 59);
+}
+
+@font-face {
+  font-family: Asenine;
+  src: url(ASENW___.ttf);
+}

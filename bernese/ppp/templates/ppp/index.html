@@ -18,7 +18,30 @@
   </div>
 
   <h2>Posicionamento por Ponto Preciso (PPP)</h2>
-  <br>
+
+<div align="right">
+<button id="helpCollapse-btn" class="btn btn-default" type="button" data-toggle="collapse" data-target="#helpCollapse" aria-expanded="false" aria-controls="helpCollapse">
+  Descrição<span class="glyphicon glyphicon-question-sign help-icon"> </span>
+</button>
+</div>
+
+<div class="collapse" id="helpCollapse">
+  <div class="well text-justify">
+    <p>O PPP consiste em determinar as coordenadas do vértice de interesse de forma absoluta, com o uso 
+das observáveis pseudodistância e fase da onda portadora, coletadas por receptores de simples ou dupla 
+frequência e com o uso de efemérides precisas do CODE. Nas efemérides precisas, ou pós-processadas, a 
+órbita (posição) e o erro do relógio (tempo) dos satélites são aferidos com alta precisão e 
+disponibilizados por meio do endereço http://ftp.aiub.unibe.ch/CODE/yyyy. O referencial geodésico 
+vinculado ao posicionamento será aquele das efemérides precisas.</p>
+<p>O PPP normalmente fornece precisão centimétrica no modo de posicionamento estático para intervalos 
+de rastreios acima de duas horas, podendo convergir para um posicionamento com precisão milimétrica a 
+medida que o intervalo de rastreio for sendo aumentado.</p>
+<p>A técnica PPP possui a vantagem de que um único receptor é necessário para realização do 
+posicionamento, eliminando a necessidade de uma estação referência. No entanto, a principal 
+desvantagem do PPP se refere ao tempo de convergência.</p>
+  </div>
+</div>
+
   {% if isOK %}
     <div class="alert alert-info alert-dismissible" role="alert">
       <button type="button" class="close" data-dismiss="alert" aria-label="Close">
@@ -37,17 +60,20 @@
     </div>
   {% endif %}
   <form method="post" enctype="multipart/form-data" id="pppForm">
+
     {% csrf_token %}
+
     {% for field in form %}
     <div class="form-group">
       {{ field.label_tag }}
-      {{ field }}
 
-      {% if field.html_name == "blq_file" %}
-      <p class="help-block">Este arquivo pode ser gerado neste <a href="http://holt.oso.chalmers.se/loading/#select" target="_blank">
-      link</a>. Sugere-se o modelo FES2004. Favor utilizar o cabeçalho deste <a href="{% static 'exemplo.txt' %}" target="_blank">
-      link</a>.</p>
-      {% endif %}
+        {% if field.html_name != "email" %}
+          <a>
+          <span class="glyphicon glyphicon-question-sign help-icon" data-helpid="{{ field.html_name }}" data-helptitle="{{ field.label }}" data-toggle="modal" data-target="#helpModal" aria-hidden="true">
+          </a>
+        {% endif %}
+
+      {{ field }}
 
       {% if field.errors %}
       <ul class="list-group">
@@ -56,6 +82,7 @@
         {% endfor %}
       </ul>
       {% endif %}
+
     </div>
     {% endfor %}
 
@@ -68,5 +95,22 @@
     </button>
   </form>
 </div> <!-- /container -->
+
+<div class="modal fade" id="helpModal" tabindex="-1" role="dialog" aria-labelledby="helpModalLabel">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <span class="modal-title"></span>
+      </div>
+      <div class="modal-body text-justify">
+        <span id="modal-message"></span>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Fechar</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 {% endblock %}

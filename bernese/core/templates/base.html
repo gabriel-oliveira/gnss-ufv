@@ -47,7 +47,9 @@
             <span class="icon-bar"></span>
             <span class="icon-bar"></span>
           </button>
-          <a class="navbar-brand"><font color="black">GNSS-UFV</font></a>
+          <a class="navbar-brand logo">
+          <span class="logo-u">GNSS-U</span><span class="logo-f">F</span><span class="logo-v">V</span>
+          </a>
 
         </div>
         <div id="navbar" class="navbar-collapse collapse">
@@ -118,5 +120,9 @@
     {% comment %} <script src="{% static 'home/assets/js/docs.min.js' %}"></script> {% endcomment %}
     <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
     {% comment %} <script src="{% static 'home/assets/js/ie10-viewport-bug-workaround.js' %}"></script> {% endcomment %}
+    
+    {% comment %} Script para inserir texto de ajuda{% endcomment %}
+    <script src="{% static 'home/helpMessages.js' %}"></script>
+
   </body>
 </html>
