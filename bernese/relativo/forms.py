@@ -113,7 +113,7 @@ class simpleRelativo(forms.ModelForm):
 		(is_ok, erroMsg, header) = readRinexObs(rFile)
 		if not is_ok:
 			raise forms.ValidationError(
-				'Erro ao persistir a coordenada de referencia. ' +
+				'Erro ao persistir as coordenadas de referencia. ' +
 				'Erro ao ler o arquivo rinex! ' + erroMsg
 			) # TODO usar outra exception
 
@@ -127,7 +127,7 @@ class simpleRelativo(forms.ModelForm):
 		coord_context['Z'] = self.cleaned_data['coord_Z']
 
 		if self.cleaned_data['coord_ref_type'] not in ['header_rinex','user_set']:
-			raise forms.ValidationError('Favor definir a origem da coordenada' +
+			raise forms.ValidationError('Favor definir a origem das coordenadas' +
 			 							' de referência.') # TODO usar outra exception
 
 
@@ -172,7 +172,7 @@ class simpleRelativo(forms.ModelForm):
 	)
 
 	epoch = forms.FloatField(
-		label = 'Época da Coordenada',
+		label = 'Época das Coordenadas',
 		required = True,
 		initial = 2010.0,
 		widget=forms.NumberInput(

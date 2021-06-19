@@ -172,7 +172,7 @@ class rapidoRelativo(forms.ModelForm):
 	)
 
 	epoch = forms.FloatField(
-		label = 'Época da Coordenada',
+		label = 'Época das Coordenadas',
 		required = True,
 		initial = 2010.0,
 		widget=forms.NumberInput(

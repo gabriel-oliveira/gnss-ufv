@@ -167,7 +167,7 @@ class redeRelativo(forms.ModelForm):
 	)
 
 	epoch = forms.FloatField(
-		label = 'Época da Coordenada',
+		label = 'Época das Coordenadas',
 		required = True,
 		initial = 2000.4,
 		widget=forms.NumberInput(
