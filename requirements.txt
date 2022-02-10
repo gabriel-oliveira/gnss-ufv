@@ -1,4 +1,4 @@
-Django==2.2.25
+Django==2.2.27
 pytz==2018.4
 psycopg2==2.8.5
 requests==2.21.0
